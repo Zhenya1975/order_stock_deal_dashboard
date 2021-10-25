@@ -41,7 +41,7 @@ for index, row in df_calendar.iterrows():
             product_name = df_master_product_catalogue.loc[product_id, 'product_name']
             manufacturer = df_master_product_catalogue.loc[product_id, 'Manufacturer']
             product_group_code = df_master_product_catalogue.loc[product_id, 'Product_group_code']
-            product_group_name = df_master_product_catalogue.loc[product_id, 'Product_group_code']
+            product_group_name = df_master_product_catalogue.loc[product_id, 'Product_group_name']
             model_name = df_master_product_catalogue.loc[product_id, 'model_name']
             # в количество вставляем случайное число от 1 до 4
             ordered_qty = random.randint(1, 10)
@@ -178,3 +178,50 @@ for index, row_df_order_delivery in df_order_delivery_for_stock.iterrows():
 
 df_stockin_stockout = pd.DataFrame(result_stockin_stockout_list_of_dicts).sort_values('date').reset_index()
 df_stockin_stockout.to_csv('data/dealer_stockin_stockout.csv')
+
+# погнали делать график сделок
+# это вообще просто. Бежим по календарю Для каждой даты случайным образом определяем количество товаров в сделках. и это все.
+df_calendar['date'] = pd.to_datetime(df_calendar['date'], infer_datetime_format=True)
+
+df_calendar_deals = df_calendar[df_calendar['date'] < (datetime.datetime.now() + datetime.timedelta(days=120))]
+df_calendar_deals = df_calendar_deals[df_calendar_deals['date']>=datetime.datetime.strptime('2021-01-01', "%Y-%m-%d")]
+result_deals_list_of_dicts = []
+for index, row_calendar in df_calendar_deals.iterrows():
+    dict_temp_zero = {}
+    date_calendar = row_calendar['date']
+    qty = 0
+
+    dict_temp_zero['date'] = date_calendar
+    dict_temp_zero['qty'] = 0
+    result_deals_list_of_dicts.append(dict_temp_zero)
+
+
+for index, row_calendar in df_calendar_deals.iterrows():
+
+    #date_calendar = datetime.datetime.strptime(row_calendar['date'], "%Y-%m-%d")
+    date_calendar = row_calendar['date']
+    # выбираем сколько товаров будет в сделках в этот день.
+    number_of_product_lines_in_deals = random.randint(30, 70)
+    for i in range(number_of_product_lines_in_deals):
+        # случайно выбираем из товарной номенклатуры товар
+        product_id = random.randint(1, 232)
+        product_name = df_master_product_catalogue.loc[product_id, 'product_name']
+        manufacturer = df_master_product_catalogue.loc[product_id, 'Manufacturer']
+        product_group_code = df_master_product_catalogue.loc[product_id, 'Product_group_code']
+        product_group_name = df_master_product_catalogue.loc[product_id, 'Product_group_name']
+        model_name = df_master_product_catalogue.loc[product_id, 'model_name']
+        # в количество вставляем случайное число
+        deal_qty = random.randint(2, 5)
+        deal_row_id = secrets.token_hex(nbytes=16)
+        dict_temp_deal = {}
+        dict_temp_deal['date'] = date_calendar # deal_snapshot_date - дата сохраненного снапшота
+        dict_temp_deal['product_id'] = product_id
+        dict_temp_deal['product_name'] = product_name
+        dict_temp_deal['manufacturer'] = manufacturer
+        dict_temp_deal['product_group_code'] = product_group_code
+        dict_temp_deal['product_group_name'] = product_group_name
+        dict_temp_deal['model_name'] = model_name
+        dict_temp_deal['qty'] = deal_qty
+        result_deals_list_of_dicts.append(dict_temp_deal)
+df_deals = pd.DataFrame(result_deals_list_of_dicts).sort_values('date')
+df_deals.to_csv('data/df_deals.csv')
