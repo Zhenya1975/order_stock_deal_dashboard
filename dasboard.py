@@ -24,20 +24,19 @@ product_groups = [{'label': " Тракторы", 'value': "TR"},
                   {'label': " Погрузчики", 'value': "LDR"},]
 
 
-
-# df_calendar = pd.read_csv('data/calendar.csv')
-# df_calendar['date'] =  pd.to_datetime(df_calendar['date'], infer_datetime_format=True)
-# format = "%Y-%m-%d"
-#print("типа даты в календаре ", type(df_calendar['date'][0]))
-#print(df_calendar['date'][0])
-
-card_content1 = [
-    dbc.CardHeader("Факт заказов, ед  *"),
-    dbc.CardBody([html.P("1 438 ед", className="card-title"),
+card_orders_ = [
+    dbc.CardHeader("Оборудование в заказах, ед  *"),
+    dbc.CardBody([html.P(className="card-title", id = 'card_orders_today_value'),
                   #html.P("План: 1 653 ед"),
-                  html.P("По состоянию на 18.10.2021",className="card-text"),]
+                  #html.P(className="card-text", id = 'card_orders_today_date'),
+                  ]
                  ),]
 
+card_stock = [
+    dbc.CardHeader("Оборудование на складах, ед  *"),
+    dbc.CardBody([html.P(className="card-title", id = 'card_stock_today_value'),
+                  ]
+                 ),]
 
 body = html.Div([
     dbc.Container([
@@ -95,13 +94,14 @@ body = html.Div([
                     html.Div(style={'padding-left': '30px', 'padding-right': '20px', 'padding-top': '10px'},
                                  children=[
                                     dbc.Row([
-                                            dbc.Col(dbc.Card(card_content1, color="dark", inverse=True)),
-                                            dbc.Col(dbc.Card(card_content1, color="dark", inverse=True)),
-                                            dbc.Col(dbc.Card(card_content1, color="dark", inverse=True)),
+                                            dbc.Col(dbc.Card(card_orders_, color="dark", inverse=True)),
+                                            dbc.Col(dbc.Card(card_stock, color="dark", inverse=True)),
+                                            #dbc.Col(dbc.Card(card_orders3, color="dark", inverse=True)),
                                                 ],
-                                                className="mb-4",
+                                                #className="mb-4",
                                             ),
-
+                                     html.P(className="card-text", id = 'card_orders_today_date'),
+                                     html.P(),
                                      dcc.Graph(id='orders_stock_deals', config={'displayModeBar': False}),
                                      html.P(),
                                      #dcc.Graph(id='orders_stock_deals_bars', config={'displayModeBar': False}),
@@ -155,11 +155,16 @@ def select_all_none(all_selected, options):
 
 orders_delivery_df = pd.read_csv('data/orders_delivery_df.csv')
 dealer_stockin_stockout_df = pd.read_csv('data/dealer_stockin_stockout.csv')
-@app.callback(Output('orders_stock_deals', 'figure'),
+@app.callback([Output('orders_stock_deals', 'figure'),
+               Output('card_orders_today_value', 'children'),
+               Output('card_orders_today_date', 'children'),
+               Output('card_stock_today_value', 'children'),
+
+               ],
               [Input('maker_selector', 'value'),
                Input('product_group_selector_checklist', 'value'),
                ])
-def order_plan_fact(selected_maker, selected_product_groups):
+def orders_stock(selected_maker, selected_product_groups):
     df_orders_filtered_by_inputs = orders_delivery_df[orders_delivery_df['product_group_code'].isin(selected_product_groups) &
                                                     orders_delivery_df['action_type'].isin(['order', 'delivery']) &
                                                     orders_delivery_df['manufacturer'].isin(selected_maker) |
@@ -177,36 +182,21 @@ def order_plan_fact(selected_maker, selected_product_groups):
     df_graph_orders_groupped = df_graph_orders_data.groupby('date').tail(1)
     df_graph_orders_groupped.to_csv('data/temp.csv')
     df_graph_orders_groupped = pd.read_csv('data/temp.csv')
+    df_graph_orders_groupped['date'] = pd.to_datetime(df_graph_orders_groupped['date'], infer_datetime_format=True)
     os.remove('data/temp.csv')
-    print("df_graph_orders_groupped['date'][0]", df_graph_orders_groupped['date'][0], type(df_graph_orders_groupped['date'][0]))
-    exists = '2020-01-01' in df_graph_orders_groupped['date']
-    print(exists)
-    calendar_df = pd.read_csv('data/calendar.csv')
-    # for index_cal, row_cal in calendar_df.iterrows():
-    #     print(row_cal['date'])
-
-
-
-    #df_graph_orders_groupped['date'] = pd.to_datetime(df_graph_orders_groupped.loc[:, 'date']).dt.date
-    #print(df_graph_orders_groupped['date'])
-    #df_graph_orders_groupped_2021 = df_graph_orders_groupped[df_graph_orders_groupped['date'] >= datetime.datetime.strptime("01.01.2021", "%d.%m.%Y")]
-    #df_graph_orders_groupped_2021 = df_graph_orders_groupped.loc[:, df_graph_orders_groupped['date'] >= datetime.datetime.strptime("01.01.2021", "%d.%m.%Y")]
-    #df_graph_orders_groupped.to_csv('data/df_graph_orders_data_groupped.csv')
-    # теперь надо заполнять пустые даты.
-
-    #calendar_df['date'] = pd.to_datetime(calendar_df['date'], infer_datetime_format=True)
-    #calendar_df['date'] = pd.to_datetime(calendar_df['date']).dt.date
-
-    #print('calendar_df', calendar_df['date'][0], type(calendar_df['date'][0]))
-    # надо получить лист уникальных дат в датафрейме действий
-
-
     start_date_orders = datetime.datetime.strptime("01.01.2021", "%d.%m.%Y")
     end_date_orders = datetime.datetime.now()
     after_start_date_orders = df_graph_orders_groupped["date"] >= start_date_orders
     before_end_date_orders = df_graph_orders_groupped["date"] <= end_date_orders
     between_two_dates = after_start_date_orders & before_end_date_orders
     df_graph_orders_groupped_2021 = df_graph_orders_groupped.loc[between_two_dates]
+    today = datetime.datetime.now()
+    today_str = today.strftime("%Y-%m-%d")
+
+    today_df = df_graph_orders_groupped_2021[df_graph_orders_groupped_2021['date'] == today_str]
+    orders_qty_today = today_df.iloc[0]['cumsum']
+    df_graph_orders_groupped_2021.to_csv('data/temp_df_graph_orders_groupped_2021_to_delete.csv')
+
 
     ########## готовим данные для ряда Ожидаемые поставки
     df_expected_orders = df_graph_orders_groupped
@@ -216,82 +206,66 @@ def order_plan_fact(selected_maker, selected_product_groups):
     before_end_date_orders = df_expected_orders["date"] <= end_date_orders
     between_two_dates = after_start_date_orders & before_end_date_orders
     df_expected_orders_2021 = df_expected_orders.loc[between_two_dates]
+    df_expected_orders_2021 = df_expected_orders_2021[df_expected_orders_2021['cumsum']>0]
+
 
     # Данные для ряда STOCK
     df_stock_filtered_by_inputs = dealer_stockin_stockout_df[dealer_stockin_stockout_df['product_group_code'].isin(selected_product_groups) &
-        dealer_stockin_stockout_df['action_type'].isin(['stock_in', 'stock_out']) &
+        dealer_stockin_stockout_df['action_type'].isin(['stockin', 'stockout']) &
         dealer_stockin_stockout_df['manufacturer'].isin(selected_maker) |
         dealer_stockin_stockout_df['action_type'].isin(['empty'])]
-    #df_stock_filtered_by_inputs.to_csv('data/temp_df_stock_filtered_by_inputs.csv')
-    #df_graph_dealer_stock = pd.read_csv('data/temp_df_stock_filtered_by_inputs.csv', parse_dates=['date'])
-    #os.remove('data/temp_df_stock_filtered_by_inputs.csv')
-    #df_graph_dealer_stock['date'] = pd.to_datetime(df_graph_dealer_stock['date'], infer_datetime_format=True)
 
+    df_stock_filtered_by_inputs.to_csv('data/temp2.csv')
+    df_graph_stock = pd.read_csv('data/temp2.csv')
+    os.remove('data/temp2.csv')
 
+    df_graph_stock['cumsum'] = df_graph_stock['qty'].cumsum()
+    df_graph_stock.to_csv('data/df_graph_stock_with_cumsum_delete.csv')
+    df_graph_stock_data_groupped = df_graph_stock.groupby('date').tail(1)
+    df_graph_stock_data_groupped.to_csv('data/df_graph_stock_data_groupped_to_delete.csv')
+    df_graph_stock_data_groupped_date_and_cumsum = df_graph_stock_data_groupped[['date', 'cumsum']]
 
-    #df_graph_dealer_stock.to_csv('data/temp_df_graph_dealer_stock.csv')
-    #df_graph_dealer_stock['cumsum'] = df_graph_dealer_stock['qty'].cumsum()
-    #df_graph_dealer_stock.to_csv('data/temp_df_graph_dealer_stock_cumsum.csv')
-
-    #df_graph_dealer_stock_groupped = df_graph_dealer_stock.groupby('date').tail(1)
-    #df_graph_dealer_stock_groupped.to_csv('data/temp_df_graph_dealer_stock_groupped.csv')
-    #df_graph_dealer_stock_groupped_2021 = df_graph_dealer_stock_groupped[df_graph_dealer_stock_groupped['date'] >= datetime.datetime.strptime("01.01.2021", "%d.%m.%Y")]
-    # start_date = datetime.datetime.strptime("01.01.2021", "%d.%m.%Y")
-    # end_date = datetime.datetime.now()
-    # after_start_date = df_graph_dealer_stock_groupped["date"] >= start_date
-    # before_end_date = df_graph_dealer_stock_groupped["date"] <= end_date
-    # between_two_dates = after_start_date & before_end_date
-    # df_graph_dealer_stock_groupped_2021 = df_graph_dealer_stock_groupped.loc[between_two_dates]
-    #df_graph_dealer_stock_groupped_2021.to_csv('data/df_graph_dealer_stock_groupped_2021.csv')
-
-    ########## готовим данные для ряда Ожидаемые поставки
-
-
-
-
-    # df_graph_expected_delivery['date'] = pd.to_datetime(df_graph_expected_delivery['date'], infer_datetime_format=True)
-    # df_graph_expected_delivery = df_graph_expected_delivery[df_graph_expected_delivery['date'] >= datetime.datetime.now()]
-    # #df_graph_expected_delivery.to_csv('data/df_graph_expected_delivery_raw.csv')
-    # df_graph_expected_delivery['qty'] = df_graph_expected_delivery['qty'] * -1
-    # df_graph_expected_delivery_groupped = df_graph_expected_delivery.groupby('date').agg(qty = ('qty', pd.Series.sum)).sort_values('date').reset_index()
-
-    #df_graph_expected_delivery_groupped.to_csv('data/df_graph_expected_delivery_groupped.csv')
-
-    #  Считаем максимальную высоту по Y
-    #df_graph_dealer_stock_groupped_2021_maxY = df_graph_dealer_stock_groupped_2021['cumsum'].max()
-    #df_graph_orders_groupped_2021_maxY = df_graph_orders_groupped_2021['cumsum'].max()
-    #maxY = df_graph_dealer_stock_groupped_2021_maxY + df_graph_orders_groupped_2021_maxY
-    #print('df_graph_dealer_stock_groupped_2021_maxY', df_graph_dealer_stock_groupped_2021_maxY, 'df_graph_orders_groupped_2021_maxY', df_graph_orders_groupped_2021_maxY, "maxY", maxY)
+    df_graph_stock_data_groupped_date_and_cumsum.to_csv('data/df_graph_stock_data_groupped.csv')
+    df_graph_stock_data_groupped_date_and_cumsum = pd.read_csv('data/df_graph_stock_data_groupped.csv')
+    df_graph_stock_data_groupped_date_and_cumsum['date'] = pd.to_datetime(df_graph_stock_data_groupped_date_and_cumsum['date'], infer_datetime_format=True)
+    #os.remove('data/df_graph_stock_data_groupped.csv')
+    start_date_stock = datetime.datetime.strptime("01.01.2021", "%d.%m.%Y")
+    end_date_stock = datetime.datetime.now()
+    after_start_date_stock = df_graph_stock_data_groupped_date_and_cumsum["date"] >= start_date_stock
+    before_end_date_stock = df_graph_stock_data_groupped_date_and_cumsum["date"] <= end_date_stock
+    between_two_dates = after_start_date_stock & before_end_date_stock
+    df_graph_stock_data_groupped_2021 = df_graph_stock_data_groupped_date_and_cumsum.loc[between_two_dates]
+    df_graph_stock_data_groupped_2021.to_csv('data/df_graph_stock_data_groupped_2101.csv')
+    today_df_stock = df_graph_stock_data_groupped_2021[df_graph_stock_data_groupped_2021['date'] == today_str]
+    stock_qty_today = today_df_stock.iloc[0]['cumsum']
 
     fig = go.Figure()
-    # Ожидаемые поставки у поставщика
-    # fig.add_trace(go.Bar(
-    #     x=df_expected_orders_2021['date'],
-    #     y=df_expected_orders_2021['cumsum'],
-    #     # fill='tozeroy',
-    #     name='Ожидаемые поставки',
-    # ))
+    #Ожидаемые поставки у поставщика
+    fig.add_trace(go.Bar(
+        x=df_expected_orders_2021['date'],
+        y=df_expected_orders_2021['cumsum'],
+        # fill='tozeroy',
+        name='В заказах у поставщика. По ожидаемой дате поставки',
+    ))
     # Заказы у поставщика
     fig.add_trace(go.Scatter(
         x=df_graph_orders_groupped_2021['date'],
         y = df_graph_orders_groupped_2021['cumsum'],
         #fill='tozeroy',
-        name='В заказах у поставщика',
+        name='В заказах у поставщика. История',
         hoverinfo='x+y',
         stackgroup='one',
     ))
 
-
-
     # Склад ДИЛЕРА
-    # fig.add_trace(go.Scatter(
-    #     x=df_graph_dealer_stock_groupped_2021['date'],
-    #     y=df_graph_dealer_stock_groupped_2021['cumsum'],
-    #     # fill='tozeroy',
-    #     name='Склад дилера',
-    #     hoverinfo='x+y',
-    #     stackgroup='one'
-    # ))
+    fig.add_trace(go.Scatter(
+        x=df_graph_stock_data_groupped_2021['date'],
+        y=df_graph_stock_data_groupped_2021['cumsum'],
+        # fill='tozeroy',
+        name='Склад дилера',
+        hoverinfo='x+y',
+        stackgroup='one'
+    ))
 
     # fig.add_trace(go.Scatter(
     #     x=df_graph_expected_delivery_groupped['date'],
@@ -303,7 +277,7 @@ def order_plan_fact(selected_maker, selected_product_groups):
     # ))
 
     date_range_min = datetime.datetime.strptime("01.01.2021", "%d.%m.%Y")
-    date_range_max = df_graph_orders['date'].max()
+    date_range_max = df_expected_orders_2021['date'].max()
 
     fig.update_xaxes(rangeslider_visible=True,)
 
@@ -313,13 +287,17 @@ def order_plan_fact(selected_maker, selected_product_groups):
                       #yaxis_range=[0, maxY*1.3],
                       hovermode = "closest",
                       yaxis_title="Кол-во единиц",
+                      legend_orientation="h",
 
                       #xaxis_title='Дата заказа',
-                      # legend_title="Legend Title",
-                      title={'text': 'Техника в заказах, на складах и сделках, ед', 'font': {'color': 'white'}, 'x': 0.5},
+                      #legend_title="Legend Title",
+                      #title={'text': 'Техника в заказах, на складах и сделках, ед', 'font': {'color': 'white'}, 'x': 0.5},
                       )
 
-    return fig
+
+    today_to_card = datetime.datetime.now()
+    today_to_card = today_to_card.strftime("%d.%m.%Y")
+    return fig, '{}'.format(orders_qty_today), '* По состоянию на {}'.format(today_to_card), format(stock_qty_today)
 
 if __name__ == "__main__":
     app.run_server(debug = True)

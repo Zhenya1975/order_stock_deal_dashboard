@@ -44,7 +44,7 @@ for index, row in df_calendar.iterrows():
             product_group_name = df_master_product_catalogue.loc[product_id, 'Product_group_code']
             model_name = df_master_product_catalogue.loc[product_id, 'model_name']
             # в количество вставляем случайное число от 1 до 4
-            ordered_qty = random.randint(1, 4)
+            ordered_qty = random.randint(1, 10)
             # date - это дата из календаря
             order_date = datetime.datetime.strptime(row['date'], "%Y-%m-%d")
             if order_date <= datetime.datetime.now():
@@ -99,7 +99,7 @@ for index, row in df_orders_delivery.iterrows():
     while order_balance > 0:
         dict_temp1 = {}
         # delta - количество дней, которые будем прибавлять к дате заказа для получения даты отгрузки
-        delta = datetime.timedelta(days=random.randint(10, 100))
+        delta = datetime.timedelta(days=random.randint(10, 60))
         temp_date = temp_date + delta
         delivery_qty = random.randint(1, order_balance)
         updated_order_balance = order_balance - delivery_qty
@@ -158,7 +158,7 @@ for index, row_df_order_delivery in df_order_delivery_for_stock.iterrows():
         while stock_balance > 0:
             dict_temp_stockout = {}
             # delta - количество дней, которые будем прибавлять к дате заказа для получения даты отгрузки
-            delta = datetime.timedelta(days=random.randint(10, 60))
+            delta = datetime.timedelta(days=random.randint(60, 70))
             temp_date_stockout = temp_date_stockout + delta
             sold_qty = random.randint(1, stock_balance)
             updated_stock_balance = stock_balance - sold_qty
