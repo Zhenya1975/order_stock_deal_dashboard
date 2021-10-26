@@ -213,7 +213,16 @@ def orders_stock(selected_maker, selected_product_groups):
         ]
     df_deals_filtered_by_inputs = df_deals_filtered_by_inputs[['date', 'qty']]
     df_deals_groupped = df_deals_filtered_by_inputs.groupby('date', as_index=False)["qty"].sum()
-    df_deals_groupped.to_csv('data/df_deals_groupped.csv')
+
+    df_deals_groupped['date'] = pd.to_datetime(df_deals_groupped['date'], infer_datetime_format=True)
+    start_date_deal = datetime.datetime.strptime("01.01.2021", "%d.%m.%Y")
+    end_date_deal = datetime.datetime.now()
+    after_start_date_deal = df_deals_groupped["date"] >= start_date_deal
+    before_end_date_deal = df_deals_groupped["date"] <= end_date_deal
+    #between_two_dates = after_start_date_deal  & before_end_date_deal
+    between_two_dates = after_start_date_deal
+    df_deals_groupped_2021 = df_deals_groupped.loc[between_two_dates]
+
 
     ########## готовим данные для ряда Ожидаемые поставки
     df_expected_orders = df_graph_orders_groupped
@@ -289,8 +298,8 @@ def orders_stock(selected_maker, selected_product_groups):
 
     # сделки
     fig.add_trace(go.Scatter(
-        x=df_deals_groupped['date'],
-        y=df_deals_groupped['qty'],
+        x=df_deals_groupped_2021['date'],
+        y=df_deals_groupped_2021['qty'],
         # fill='tozeroy',
         name='Сделки',
     ))
