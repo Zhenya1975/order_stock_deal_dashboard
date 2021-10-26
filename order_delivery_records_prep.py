@@ -192,6 +192,7 @@ for index, row_calendar in df_calendar_deals.iterrows():
     qty = 0
 
     dict_temp_zero['date'] = date_calendar
+    dict_temp_zero['deal_status'] = 'empty'
     dict_temp_zero['qty'] = 0
     result_deals_list_of_dicts.append(dict_temp_zero)
 
@@ -215,6 +216,7 @@ for index, row_calendar in df_calendar_deals.iterrows():
         deal_row_id = secrets.token_hex(nbytes=16)
         dict_temp_deal = {}
         dict_temp_deal['date'] = date_calendar # deal_snapshot_date - дата сохраненного снапшота
+        dict_temp_deal['deal_status'] = 'active'
         dict_temp_deal['product_id'] = product_id
         dict_temp_deal['product_name'] = product_name
         dict_temp_deal['manufacturer'] = manufacturer

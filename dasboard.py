@@ -178,7 +178,7 @@ def orders_stock(selected_maker, selected_product_groups):
 
     df_orders_filtered_by_inputs.to_csv('data/temp1.csv')
     df_graph_orders = pd.read_csv('data/temp1.csv')
-    #os.remove('data/temp1.csv')
+    os.remove('data/temp1.csv')
     #df_graph_orders['date'] = pd.to_datetime(df_graph_orders['date'], infer_datetime_format=True).date()
     #df_graph_orders.to_csv('data/temp_df_graph_orders.csv')
     #df_graph_orders = df_graph_orders[df_graph_orders['date'] <= datetime.datetime.now()]
@@ -208,7 +208,8 @@ def orders_stock(selected_maker, selected_product_groups):
     df_deals = pd.read_csv('data/df_deals.csv')
     df_deals_filtered_by_inputs = df_deals[
         df_deals['product_group_code'].isin(selected_product_groups) &
-        df_deals['manufacturer'].isin(selected_maker)
+        df_deals['manufacturer'].isin(selected_maker)|
+        df_deals['deal_status'].isin(['empty'])
         ]
     df_deals_filtered_by_inputs = df_deals_filtered_by_inputs[['date', 'qty']]
     df_deals_groupped = df_deals_filtered_by_inputs.groupby('date', as_index=False)["qty"].sum()
@@ -315,14 +316,12 @@ def orders_stock(selected_maker, selected_product_groups):
 
     today_df_deals = df_deals_groupped[df_deals_groupped['date'] == today_str]
     #print(today_df_deals)
-    #deals_qty_today = today_df_deals.iloc[0]['qty']
-
-
+    deals_qty_today = today_df_deals.iloc[0]['qty']
 
 
     today_to_card = datetime.datetime.now()
     today_to_card = today_to_card.strftime("%d.%m.%Y")
-    return fig, '{}'.format(orders_qty_today), '* По состоянию на {}'.format(today_to_card), format(stock_qty_today), format("-")
+    return fig, '{}'.format(orders_qty_today), '* По состоянию на {}'.format(today_to_card), format(stock_qty_today), format(deals_qty_today)
 
 if __name__ == "__main__":
     app.run_server(debug = True)
