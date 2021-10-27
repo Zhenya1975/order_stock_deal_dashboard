@@ -13,6 +13,8 @@ import os
 
 app = dash.Dash(__name__, external_stylesheets =[dbc.themes.BOOTSTRAP])
 
+server = app.server
+
 makers = [{'label': "John Deere", 'value': "John Deere"},
            {'label': "JCB", 'value': "JCB"},
            {'label': "Kuhn", 'value': "KUHN"},]
