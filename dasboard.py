@@ -1,8 +1,8 @@
 import datetime
 
 import dash_bootstrap_components as dbc
+from dash import dcc, Dash, html, Input, Output, callback_context
 import dash
-from dash import html, dcc
 import pandas as pd
 import numpy as np
 import plotly.express as px
@@ -18,6 +18,8 @@ server = app.server
 makers = [{'label': "John Deere", 'value': "John Deere"},
            {'label': "JCB", 'value': "JCB"},
            {'label': "Kuhn", 'value': "KUHN"},]
+
+makers_list = ["John Deere", "JCB", "KUHN"]
 
 product_groups = [{'label': " Тракторы", 'value': "TR"},
                   {'label': " З/У комбайны", 'value': "HARV"},
@@ -50,7 +52,7 @@ body = html.Div([
     dbc.Container([
 
         # Заголовок Дашшборда
-        html.Div(style={'padding-left': '15px', 'padding-right': '20px', 'padding-top': '5px', 'padding-bottom': '5px', 'color': 'white'},
+        html.Div(style={'paddingLeft': '15px', 'paddingRight': '20px', 'paddingTop': '5px', 'paddingBottom': '5px', 'color': 'white'},
                  children=[
                      html.H2('ЗАКАЗЫ У ПОСТАВЩИКА - СКЛАД ДИЛЕРА - СДЕЛКИ')
                  ]
@@ -58,19 +60,27 @@ body = html.Div([
         dbc.Row([
             dbc.Col(width=3,
                 children=[
-                    html.Div(style={'padding-left': '30px', 'padding-right': '20px', 'margin-top': '10px', 'color': 'white'},
+                    html.Div(style={'paddingReft': '30px', 'paddingRight': '20px', 'marginTop': '10px', 'color': 'white'},
                              children=[
                                  html.P(),
                                  html.B('Бренды'),
                                  html.P(),
-                                 dcc.Checklist(
-                                        id="all-or-none-brands",
-                                        options=[{"label": " Выбрать все", "value": "All"}],
-                                        value=["All"],
-                                        labelStyle={"display": "inline-block"},
-                                    ),
+                                 html.Div(style={'marginLeft': '3px'},
+                                          children=[
+                                              dbc.Button("Выбрать все", color="secondary", size="sm", id="select_all_makers_button"),
+                                              dbc.Button("Снять выбор", color="secondary", size="sm", style={'marginLeft': '3px'}, id="release_all_makers_button"),
+                                                    ]
+                                          ),
+
+                                 # dcc.Checklist(
+                                 #        id="all-or-none-brands",
+                                 #        options=[{"label": " Выбрать все", "value": "All"}],
+                                 #        value=["All"],
+                                 #        labelStyle={"display": "inline-block"},
+                                 #    ),
                                  dcc.Checklist(id='maker_selector',
                                                options=makers,
+                                               value=makers_list,
                                                labelStyle = dict(display='block')),
 
                                  html.P(),
@@ -85,72 +95,67 @@ body = html.Div([
                                  dcc.Checklist(id='product_group_selector_checklist',
                                                options=product_groups,
                                                labelStyle = dict(display='block')),
-
-                                 # dcc.Dropdown(id='product_group_selector',
-                                 #              options= product_groups,
-                                 #                      #options=get_options(df_order_fact_2021['product_group_Top_Code'].unique()),
-                                 #                      multi=True,
-                                 #                      value=df_order_fact_2021['product_group_Top_Code'].unique()
-                                 #                      ),
-                                html.Hr(),
+                                 html.Hr(),
                              ]
                              ),
                 ]),
             dbc.Col(width=9,
                 children=[
                     html.P(),
-                    html.Div(style={'padding-left': '30px', 'padding-right': '20px', 'padding-top': '10px'},
+                    html.Div(style={'paddingLeft': '30px', 'paddingRight': '20px', 'paddingTop': '10px'},
                                  children=[
                                     dbc.Row([
                                             dbc.Col(dbc.Card(card_orders_, color="dark", inverse=True)),
                                             dbc.Col(dbc.Card(card_stock, color="dark", inverse=True)),
                                             dbc.Col(dbc.Card(card_deals, color="dark", inverse=True)),
                                                 ],
-                                                #className="mb-4",
+
                                             ),
                                      html.P(className="card-text", id = 'card_orders_today_date'),
                                      html.P(),
                                      dcc.Graph(id='orders_stock_deals', config={'displayModeBar': False}),
-                                     html.P(),
-                                     #dcc.Graph(id='orders_stock_deals_bars', config={'displayModeBar': False}),
+
 
                                  ]),
-                    # html.Div(style={'padding-left': '30px', 'padding-right': '20px', 'padding-top': '10px'},
-                    #              children=[
-                    #                  html.Div(style={'color': 'white', 'textAlign': 'center'},
-                    #                           children=[
-                    #                               html.P('План-факт заказов по кварталам 2021')
-                    #                           ]),
-                    #                  dbc.Row([
-                    #                      dbc.Col(width=3, children=[html.Div(dcc.Graph(id = "orders_q4"))]),
-                    #                      dbc.Col(width=3, children=[html.Div(dcc.Graph(id = "orders_q3"))]),
-                    #                      dbc.Col(width=3, children=[html.Div(dcc.Graph(id = "orders_q2"))]),
-                    #                      dbc.Col(width=3, children=[html.Div(dcc.Graph(id = "orders_q1"))]),
-                    # ],
-                    # justify="between",)
-                    #
-                    #              ]),
-
-
                     ])
 
         ])
 
-    ], fluid=True, style={'background-color': '#19202A',"height": "150vh"},)
+    ], fluid=True, style={'backgroundColor': '#19202A',"height": "150vh"},)
 ])
 
 
 # передаем разметку страницы в приложение
 app.layout = html.Div([body])
 
-@app.callback(Output("maker_selector", "value"),
-              [Input("all-or-none-brands", "value")],
-              [State("maker_selector", "options")],
+@app.callback(
+    Output("maker_selector", "value"),
+    [Input('select_all_makers_button', 'n_clicks'),
+     Input('release_all_makers_button', 'n_clicks')],
+    [State("maker_selector", "options")],
 )
-def select_all_none(all_selected, options):
-    #all_or_none = []
-    all_or_none = [option["value"] for option in options if all_selected]
-    return all_or_none
+def button_callback_func(maker_select_all_button, maker_select_none_button, options):
+    changed_id = [p['prop_id'] for p in callback_context.triggered][0]
+    if 'select_all_makers_button' in changed_id:
+        selected_values = [option["value"] for option in options]
+    elif 'release_all_makers_button' in changed_id:
+        selected_values = []
+    else:
+        raise dash.exceptions.PreventUpdate
+    print(selected_values)
+    return selected_values
+
+
+
+# @app.callback(Output("maker_selector", "value"),
+#               [Input("all-or-none-brands", "value")],
+#               [State("maker_selector", "options")],
+# )
+# def select_all_none(all_selected, options):
+#     #all_or_none = []
+#     all_or_none = [option["value"] for option in options if all_selected]
+#     print('all_or_none: ',all_or_none)
+#     return all_or_none
 
 @app.callback(Output("product_group_selector_checklist", "value"),
               [Input("all-or-none", "value")],
