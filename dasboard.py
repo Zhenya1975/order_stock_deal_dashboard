@@ -29,6 +29,17 @@ product_groups = [{'label': " Тракторы", 'value': "TR"},
 
 product_groups_list = ["TR", "HARV", "TL", "SPR", "LDR"]
 
+deal_stages = [
+    {'label': ' 1. Выявление потребности', 'value': 'phase_1'},
+{'label': ' 2. Презентационная работа', 'value': 'phase_2'},
+{'label': ' 3. Переговоры', 'value': 'phase_3'},
+{'label': ' 4. Заключение договора', 'value': 'phase_4'},
+{'label': ' 5. Отгрузка и закрытие сделки', 'value': 'phase_5'},]
+
+deal_stages_list = ['phase_1', 'phase_2', 'phase_3', 'phase_4', 'phase_5']
+
+
+
 card_orders_ = [
     dbc.CardHeader("Оборудование в заказах, ед  *"),
     dbc.CardBody([html.P(className="card-title", id = 'card_orders_today_value'),
@@ -88,15 +99,26 @@ body = html.Div([
                                                     ]
                                           ),
 
-                                 # dcc.Checklist(
-                                 #        id="all-or-none",
-                                 #        options=[{"label": " Выбрать все", "value": "All"}],
-                                 #        value=["All"],
-                                 #        labelStyle={"display": "inline-block"},
-                                 #    ),
+
                                  dcc.Checklist(id='product_group_selector_checklist',
                                                options=product_groups,
                                                value= product_groups_list,
+                                               labelStyle = dict(display='block')),
+                                 html.Hr(),
+                                 ##### Выбор этапа сделки
+                                 html.P(),
+                                 html.B('Этапы сделки'),
+                                 html.P(),
+                                 html.Div(style={'marginLeft': '3px'},
+                                          children=[
+                                              dbc.Button("Выбрать все", color="secondary", size="sm", id="select_all_deals_stage_button", style={'marginBottom': '3px'}),
+                                              dbc.Button("Снять выбор", color="secondary", size="sm", style={'marginLeft': '3px', 'marginBottom': '3px'}, id="release_all_deals_stage_button"),
+                                                    ]
+                                          ),
+
+                                 dcc.Checklist(id='deal_stage_selector_checklist',
+                                               options=deal_stages,
+                                               value= deal_stages_list,
                                                labelStyle = dict(display='block')),
                                  html.Hr(),
                              ]
@@ -124,12 +146,31 @@ body = html.Div([
 
         ])
 
-    ], fluid=True, style={'backgroundColor': '#19202A'},)
-])
+    ], fluid=True,style={'backgroundColor': '#19202A'})
+],)
 
 
 # передаем разметку страницы в приложение
 app.layout = html.Div([body])
+
+@app.callback(
+    Output("deal_stage_selector_checklist", "value"),
+    [Input('select_all_deals_stage_button', 'n_clicks'),
+     Input('release_all_deals_stage_button', 'n_clicks')],
+    [State("deal_stage_selector_checklist", "options")],
+)
+def button_productgroup_callback_func(select_all_product_groups_button, release_all_product_groups_button, options):
+    changed_id = [p['prop_id'] for p in callback_context.triggered][0]
+    full_list = [option["value"] for option in options]
+    if 'select_all_deals_stage_button' in changed_id:
+        selected_values = [option["value"] for option in options]
+        return selected_values
+    elif 'release_all_deals_stage_button' in changed_id:
+        selected_values = []
+        return selected_values
+    return full_list
+
+
 
 @app.callback(
     Output("maker_selector", "value"),
@@ -167,16 +208,6 @@ def button_productgroup_callback_func(select_all_product_groups_button, release_
     return full_list
 
 
-
-# @app.callback(Output("product_group_selector_checklist", "value"),
-#               [Input("all-or-none", "value")],
-#               [State("product_group_selector_checklist", "options")],
-# )
-# def select_all_none(all_selected, options):
-#     #all_or_none = []
-#     all_or_none = [option["value"] for option in options if all_selected]
-#     return all_or_none
-
 orders_delivery_df = pd.read_csv('data/orders_delivery_df.csv')
 dealer_stockin_stockout_df = pd.read_csv('data/dealer_stockin_stockout.csv')
 @app.callback([Output('orders_stock_deals', 'figure'),
@@ -187,8 +218,9 @@ dealer_stockin_stockout_df = pd.read_csv('data/dealer_stockin_stockout.csv')
                ],
               [Input('maker_selector', 'value'),
                Input('product_group_selector_checklist', 'value'),
+               Input('deal_stage_selector_checklist', 'value'),
                ])
-def orders_stock(selected_maker, selected_product_groups):
+def orders_stock(selected_maker, selected_product_groups, selected_deal_stages):
 
     df_orders_filtered_by_inputs = orders_delivery_df[orders_delivery_df['product_group_code'].isin(selected_product_groups) &
                                                     orders_delivery_df['action_type'].isin(['order', 'delivery']) &
@@ -223,10 +255,13 @@ def orders_stock(selected_maker, selected_product_groups):
     #df_graph_orders_groupped_2021.to_csv('data/temp_df_graph_orders_groupped_2021_to_delete.csv')
 
 
+
+
     # данные для ряда Сделки
     df_deals = pd.read_csv('data/df_deals.csv')
     df_deals_filtered_by_inputs = df_deals[
         df_deals['product_group_code'].isin(selected_product_groups) &
+        df_deals['deal_stage_code'].isin(selected_deal_stages) &
         df_deals['manufacturer'].isin(selected_maker)|
         df_deals['deal_status'].isin(['empty'])
         ]
@@ -238,10 +273,17 @@ def orders_stock(selected_maker, selected_product_groups):
     end_date_deal = datetime.datetime.now()
     after_start_date_deal = df_deals_groupped["date"] >= start_date_deal
     before_end_date_deal = df_deals_groupped["date"] <= end_date_deal
-    #between_two_dates = after_start_date_deal  & before_end_date_deal
-    between_two_dates = after_start_date_deal
-    df_deals_groupped_2021 = df_deals_groupped.loc[between_two_dates]
+    between_two_dates_deals = after_start_date_deal  & before_end_date_deal
+    #between_two_dates = after_start_date_deal
+    df_deals_groupped_2021 = df_deals_groupped.loc[between_two_dates_deals]
 
+    # данные для ряда Ожидаемые сделки.
+    expected_deals_start_date = datetime.datetime.now()
+    expected_deals_end_date = df_deals_groupped['date'].max()
+    after_start_date_expected_deals = df_deals_groupped["date"] >= expected_deals_start_date
+    before_end_date_expected_deals = df_deals_groupped["date"] <= expected_deals_end_date
+    between_two_dates_expected_deals = after_start_date_expected_deals & before_end_date_expected_deals
+    df_expected_deals_groupped_2021 = df_deals_groupped.loc[between_two_dates_expected_deals]
 
     ########## готовим данные для ряда Ожидаемые поставки
     df_expected_orders = df_graph_orders_groupped
@@ -293,14 +335,14 @@ def orders_stock(selected_maker, selected_product_groups):
         x=df_expected_orders_2021['date'],
         y=df_expected_orders_2021['cumsum'],
         # fill='tozeroy',
-        name='В заказах у поставщика. По ожидаемой дате поставки',
+        name='В заказах у поставщика, ед',
     ))
     # Заказы у поставщика
     fig.add_trace(go.Scatter(
         x=df_graph_orders_groupped_2021['date'],
         y = df_graph_orders_groupped_2021['cumsum'],
         #fill='tozeroy',
-        name='В заказах у поставщика. История',
+        name='В заказах у поставщика. История, ед',
         hoverinfo='x+y',
         stackgroup='one',
     ))
@@ -310,22 +352,29 @@ def orders_stock(selected_maker, selected_product_groups):
         x=df_graph_stock_data_groupped_2021['date'],
         y=df_graph_stock_data_groupped_2021['cumsum'],
         # fill='tozeroy',
-        name='Склад дилера',
+        name='Склад дилера, ед',
         hoverinfo='x+y',
         stackgroup='one'
     ))
 
-    # сделки
+    # сделки до сегодняшнего дня в прошлом
+    fig.add_trace(go.Scatter(
+        x=df_expected_deals_groupped_2021['date'],
+        y=df_expected_deals_groupped_2021['qty'],
+        # fill='tozeroy',
+        mode='markers',
+        name='Зарегистрированный спрос, ед',
+    ))
+    # ожидаемые сделки
     fig.add_trace(go.Scatter(
         x=df_deals_groupped_2021['date'],
         y=df_deals_groupped_2021['qty'],
         # fill='tozeroy',
-        name='Сделки',
+        name='Товары в активных сделках, ед',
     ))
 
-
     date_range_min = datetime.datetime.strptime("01.01.2021", "%d.%m.%Y")
-    date_range_max = df_expected_orders_2021['date'].max()
+    date_range_max = df_deals_groupped['date'].max()
 
     fig.update_xaxes(rangeslider_visible=True,)
 
