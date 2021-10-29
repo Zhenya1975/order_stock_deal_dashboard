@@ -1,7 +1,7 @@
 import datetime
 
 import dash_bootstrap_components as dbc
-from dash import dcc, Dash, html, Input, Output, callback_context
+from dash import dcc, Dash, html, Input, Output, callback_context, no_update
 import dash
 import pandas as pd
 import numpy as np
@@ -15,9 +15,9 @@ app = dash.Dash(__name__, external_stylesheets =[dbc.themes.BOOTSTRAP])
 
 server = app.server
 
-makers = [{'label': "John Deere", 'value': "John Deere"},
-           {'label': "JCB", 'value': "JCB"},
-           {'label': "Kuhn", 'value': "KUHN"},]
+makers = [{'label':" John Deere", 'value': "John Deere"},
+           {'label':" JCB", 'value': "JCB"},
+           {'label':" Kuhn", 'value': "KUHN"},]
 
 makers_list = ["John Deere", "JCB", "KUHN"]
 
@@ -27,6 +27,7 @@ product_groups = [{'label': " Тракторы", 'value': "TR"},
                   {'label': " Опрыскиватели", 'value': "SPR"},
                   {'label': " Погрузчики", 'value': "LDR"},]
 
+product_groups_list = ["TR", "HARV", "TL", "SPR", "LDR"]
 
 card_orders_ = [
     dbc.CardHeader("Оборудование в заказах, ед  *"),
@@ -67,17 +68,11 @@ body = html.Div([
                                  html.P(),
                                  html.Div(style={'marginLeft': '3px'},
                                           children=[
-                                              dbc.Button("Выбрать все", color="secondary", size="sm", id="select_all_makers_button"),
-                                              dbc.Button("Снять выбор", color="secondary", size="sm", style={'marginLeft': '3px'}, id="release_all_makers_button"),
+                                              dbc.Button("Выбрать все", color="secondary", size="sm", id="select_all_makers_button", style={'marginBottom': '3px'}),
+                                              dbc.Button("Снять выбор", color="secondary", size="sm", style={'marginLeft': '3px', 'marginBottom': '3px'}, id="release_all_makers_button"),
                                                     ]
                                           ),
 
-                                 # dcc.Checklist(
-                                 #        id="all-or-none-brands",
-                                 #        options=[{"label": " Выбрать все", "value": "All"}],
-                                 #        value=["All"],
-                                 #        labelStyle={"display": "inline-block"},
-                                 #    ),
                                  dcc.Checklist(id='maker_selector',
                                                options=makers,
                                                value=makers_list,
@@ -86,14 +81,22 @@ body = html.Div([
                                  html.P(),
                                  html.B('Товарные группы'),
                                  html.P(),
-                                 dcc.Checklist(
-                                        id="all-or-none",
-                                        options=[{"label": " Выбрать все", "value": "All"}],
-                                        value=["All"],
-                                        labelStyle={"display": "inline-block"},
-                                    ),
+                                 html.Div(style={'marginLeft': '3px'},
+                                          children=[
+                                              dbc.Button("Выбрать все", color="secondary", size="sm", id="select_all_product_groups_button", style={'marginBottom': '3px'}),
+                                              dbc.Button("Снять выбор", color="secondary", size="sm", style={'marginLeft': '3px', 'marginBottom': '3px'}, id="release_all_product_groups_button"),
+                                                    ]
+                                          ),
+
+                                 # dcc.Checklist(
+                                 #        id="all-or-none",
+                                 #        options=[{"label": " Выбрать все", "value": "All"}],
+                                 #        value=["All"],
+                                 #        labelStyle={"display": "inline-block"},
+                                 #    ),
                                  dcc.Checklist(id='product_group_selector_checklist',
                                                options=product_groups,
+                                               value= product_groups_list,
                                                labelStyle = dict(display='block')),
                                  html.Hr(),
                              ]
@@ -121,7 +124,7 @@ body = html.Div([
 
         ])
 
-    ], fluid=True, style={'backgroundColor': '#19202A',"height": "150vh"},)
+    ], fluid=True, style={'backgroundColor': '#19202A'},)
 ])
 
 
@@ -134,37 +137,45 @@ app.layout = html.Div([body])
      Input('release_all_makers_button', 'n_clicks')],
     [State("maker_selector", "options")],
 )
-def button_callback_func(maker_select_all_button, maker_select_none_button, options):
+def button_callback_func(select_all_makers_button, release_all_makers_button, options):
     changed_id = [p['prop_id'] for p in callback_context.triggered][0]
+    full_list = [option["value"] for option in options]
     if 'select_all_makers_button' in changed_id:
         selected_values = [option["value"] for option in options]
+        return selected_values
     elif 'release_all_makers_button' in changed_id:
         selected_values = []
-    else:
-        raise dash.exceptions.PreventUpdate
-    print(selected_values)
-    return selected_values
+        return selected_values
+    return full_list
+
+
+@app.callback(
+    Output("product_group_selector_checklist", "value"),
+    [Input('select_all_product_groups_button', 'n_clicks'),
+     Input('release_all_product_groups_button', 'n_clicks')],
+    [State("product_group_selector_checklist", "options")],
+)
+def button_productgroup_callback_func(select_all_product_groups_button, release_all_product_groups_button, options):
+    changed_id = [p['prop_id'] for p in callback_context.triggered][0]
+    full_list = [option["value"] for option in options]
+    if 'select_all_product_groups_button' in changed_id:
+        selected_values = [option["value"] for option in options]
+        return selected_values
+    elif 'release_all_product_groups_button' in changed_id:
+        selected_values = []
+        return selected_values
+    return full_list
 
 
 
-# @app.callback(Output("maker_selector", "value"),
-#               [Input("all-or-none-brands", "value")],
-#               [State("maker_selector", "options")],
+# @app.callback(Output("product_group_selector_checklist", "value"),
+#               [Input("all-or-none", "value")],
+#               [State("product_group_selector_checklist", "options")],
 # )
 # def select_all_none(all_selected, options):
 #     #all_or_none = []
 #     all_or_none = [option["value"] for option in options if all_selected]
-#     print('all_or_none: ',all_or_none)
 #     return all_or_none
-
-@app.callback(Output("product_group_selector_checklist", "value"),
-              [Input("all-or-none", "value")],
-              [State("product_group_selector_checklist", "options")],
-)
-def select_all_none(all_selected, options):
-    #all_or_none = []
-    all_or_none = [option["value"] for option in options if all_selected]
-    return all_or_none
 
 orders_delivery_df = pd.read_csv('data/orders_delivery_df.csv')
 dealer_stockin_stockout_df = pd.read_csv('data/dealer_stockin_stockout.csv')
@@ -178,6 +189,8 @@ dealer_stockin_stockout_df = pd.read_csv('data/dealer_stockin_stockout.csv')
                Input('product_group_selector_checklist', 'value'),
                ])
 def orders_stock(selected_maker, selected_product_groups):
+    print("selected_maker in graph: ", selected_maker)
+    print("selected_product_groups in graph: ", selected_product_groups)
     df_orders_filtered_by_inputs = orders_delivery_df[orders_delivery_df['product_group_code'].isin(selected_product_groups) &
                                                     orders_delivery_df['action_type'].isin(['order', 'delivery']) &
                                                     orders_delivery_df['manufacturer'].isin(selected_maker) |
@@ -331,7 +344,6 @@ def orders_stock(selected_maker, selected_product_groups):
                       )
 
     today_df_deals = df_deals_groupped[df_deals_groupped['date'] == today_str]
-    #print(today_df_deals)
     deals_qty_today = today_df_deals.iloc[0]['qty']
 
 
