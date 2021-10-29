@@ -189,8 +189,7 @@ dealer_stockin_stockout_df = pd.read_csv('data/dealer_stockin_stockout.csv')
                Input('product_group_selector_checklist', 'value'),
                ])
 def orders_stock(selected_maker, selected_product_groups):
-    print("selected_maker in graph: ", selected_maker)
-    print("selected_product_groups in graph: ", selected_product_groups)
+
     df_orders_filtered_by_inputs = orders_delivery_df[orders_delivery_df['product_group_code'].isin(selected_product_groups) &
                                                     orders_delivery_df['action_type'].isin(['order', 'delivery']) &
                                                     orders_delivery_df['manufacturer'].isin(selected_maker) |
