@@ -84,7 +84,7 @@ body = html.Div([
                         selected_className='custom-tab--selected',
                         children=[
                             dbc.Row([
-                                        dbc.Col(width=3,
+                                dbc.Col(width=3,
                                             children=[
                                                 html.Div(style={'paddingReft': '30px', 'paddingRight': '20px', 'marginTop': '10px', 'color': 'white'},
                                                          children=[
@@ -155,8 +155,7 @@ body = html.Div([
                                                                  html.P(),
                                                                  dcc.Graph(id='orders_stock_deals', config={'displayModeBar': False}),
                                                                  html.P(),
-                                                                 dcc.Graph(id='funnel_graph'),
-                                                                 html.P(),
+
 
 
                                                              ]),
@@ -171,11 +170,86 @@ body = html.Div([
                         label='СДЕЛКИ',
                         value='tab-deals',
                         className='custom-tab',
-                        selected_className='custom-tab--selected'
+                        selected_className='custom-tab--selected',
+                        children=[
+                            dbc.Row([
+                                dbc.Col(width=3,
+                                        children=[
+                                            html.Div(style={'paddingReft': '30px', 'paddingRight': '20px',
+                                                            'marginTop': '10px', 'color': 'white'},
+                                                     children=[
+                                                         html.P(),
+                                                         html.B('Бренды'),
+                                                         html.P(),
+                                                         html.Div(style={'marginLeft': '3px'},
+                                                                  children=[
+                                                                      dbc.Button("Выбрать все", size="sm",
+                                                                                 id="select_all_makers_button_tab_deals",
+                                                                                 style={'marginBottom': '3px',
+                                                                                        'marginTop': '3px',
+                                                                                        'backgroundColor': '#232632'}),
+                                                                      dbc.Button("Снять выбор", color="secondary",
+                                                                                 size="sm",
+                                                                                 style={'marginBottom': '3px',
+                                                                                        'marginTop': '3px',
+                                                                                        'backgroundColor': '#232632'},
+                                                                                 id="release_all_makers_button_tab_deals"),
+                                                                  ]
+                                                                  ),
+
+                                                         dcc.Checklist(id='maker_selector_tab_deals',
+                                                                       options=makers,
+                                                                       value=makers_list,
+                                                                       labelStyle=dict(display='block')),
+
+                                                         html.P(),
+                                                         html.B('Товарные группы'),
+                                                         html.P(),
+                                                         html.Div(style={'marginLeft': '3px'},
+                                                                  children=[
+                                                                      dbc.Button("Выбрать все", color="secondary",
+                                                                                 size="sm",
+                                                                                 id="select_all_product_groups_button_tab_deals",
+                                                                                 style={'marginBottom': '3px',
+                                                                                        'marginTop': '3px',
+                                                                                        'backgroundColor': '#232632'}),
+                                                                      dbc.Button("Снять выбор", color="secondary",
+                                                                                 size="sm",
+                                                                                 style={'marginBottom': '3px',
+                                                                                        'marginTop': '3px',
+                                                                                        'backgroundColor': '#232632'},
+                                                                                 id="release_all_product_groups_button_tab_deals"),
+                                                                  ]
+                                                                  ),
+
+                                                         dcc.Checklist(id='product_group_selector_checklist_tab_deals',
+                                                                       options=product_groups,
+                                                                       value=product_groups_list,
+                                                                       labelStyle=dict(display='block')),
+                                                         html.Hr(),
+                                                     ]
+                                                     ),
+                                        ]),
+                                dbc.Col(width=9,
+                                        children=[
+                                            html.P(),
+                                            html.Div(style={'paddingLeft': '30px', 'paddingRight': '20px',
+                                                            'paddingTop': '10px', 'color': 'white'},
+                                                     children=[
+                                                         html.P('Воронка продаж'),
+                                                         html.P(),
+                                                         dcc.Graph(id='funnel_graph',config={'displayModeBar': False}),
+                                                         html.P(),
+
+                                                     ]),
+                                        ])
+
+                            ])
+                        ]
                     ),
 
                 ]),
-            html.Div(id='tabs-content-classes')
+
         ]),
 
 
