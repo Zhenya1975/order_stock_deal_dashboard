@@ -103,7 +103,8 @@ body = html.Div([
                                                                            value=makers_list,
                                                                            labelStyle = dict(display='block')),
 
-                                                             html.P(),
+                                                             html.Hr(className="hr"),
+
                                                              html.B('Товарные группы'),
                                                              html.P(),
                                                              html.Div(style={'marginLeft': '3px'},
@@ -118,7 +119,7 @@ body = html.Div([
                                                                            options=product_groups,
                                                                            value= product_groups_list,
                                                                            labelStyle = dict(display='block')),
-                                                             html.Hr(),
+                                                             html.Hr(className="hr"),
                                                              ##### Выбор этапа сделки
                                                              html.P(),
                                                              html.B('Этапы сделки'),
@@ -201,6 +202,7 @@ body = html.Div([
                                                                        options=makers,
                                                                        value=makers_list,
                                                                        labelStyle=dict(display='block')),
+                                                         html.Hr(className="hr"),
 
                                                          html.P(),
                                                          html.B('Товарные группы'),
@@ -226,7 +228,7 @@ body = html.Div([
                                                                        options=product_groups,
                                                                        value=product_groups_list,
                                                                        labelStyle=dict(display='block')),
-                                                         html.Hr(),
+
                                                      ]
                                                      ),
                                         ]),
@@ -313,6 +315,44 @@ def button_productgroup_callback_func(select_all_product_groups_button, release_
         selected_values = []
         return selected_values
     return full_list
+
+@app.callback(
+    Output("product_group_selector_checklist_tab_deals", "value"),
+    [Input('select_all_product_groups_button_tab_deals', 'n_clicks'),
+     Input('release_all_product_groups_button_tab_deals', 'n_clicks')],
+    [State("product_group_selector_checklist_tab_deals", "options")],
+)
+def button_productgroup_callback_func(select_all_product_groups_button, release_all_product_groups_button, options):
+    changed_id = [p['prop_id'] for p in callback_context.triggered][0]
+    full_list = [option["value"] for option in options]
+    if 'select_all_product_groups_button_tab_deals' in changed_id:
+        selected_values = [option["value"] for option in options]
+        return selected_values
+    elif 'release_all_product_groups_button_tab_deals' in changed_id:
+        selected_values = []
+        return selected_values
+    return full_list
+
+
+
+@app.callback(
+    Output("maker_selector_tab_deals", "value"),
+    [Input('select_all_makers_button_tab_deals', 'n_clicks'),
+     Input('release_all_makers_button_tab_deals', 'n_clicks')],
+    [State("maker_selector_tab_deals", "options")],
+)
+def button_callback_func(select_all_makers_button, release_all_makers_button, options):
+    changed_id = [p['prop_id'] for p in callback_context.triggered][0]
+    full_list = [option["value"] for option in options]
+    if 'select_all_makers_button_tab_deals' in changed_id:
+        selected_values = [option["value"] for option in options]
+        return selected_values
+    elif 'release_all_makers_button_tab_deals' in changed_id:
+        selected_values = []
+        return selected_values
+    return full_list
+
+
 
 orders_delivery_df = pd.read_csv('data/orders_delivery_df.csv')
 dealer_stockin_stockout_df = pd.read_csv('data/dealer_stockin_stockout.csv')
@@ -511,8 +551,8 @@ def orders_stock(selected_maker, selected_product_groups, selected_deal_stages):
 # callback Воронка продаж
 @app.callback([Output('funnel_graph', 'figure'),
                ],
-              [Input('maker_selector', 'value'),
-               Input('product_group_selector_checklist', 'value'),
+              [Input('maker_selector_tab_deals', 'value'),
+               Input('product_group_selector_checklist_tab_deals', 'value'),
                #Input('deal_stage_selector_checklist', 'value'),
                ])
 def funnel(selected_maker, selected_product_groups):
