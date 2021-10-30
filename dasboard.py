@@ -525,19 +525,21 @@ def funnel(selected_maker, selected_product_groups):
 
     df_deals_groupped = today_funnel_df.groupby('deal_stage_name', as_index=False)["qty"].sum()
     trace = go.Funnel(
-        y=["Website visit", "Downloads", "Potential customers", "Requested price", "Finalized"],
-        x=[39, 27.4, 20.6, 11, 2],
+        #y=["Website visit", "Downloads", "Potential customers", "Requested price", "Finalized"],
+        y = df_deals_groupped['deal_stage_name'],
+        x=df_deals_groupped['qty'],
         textposition="inside",
-        textinfo="value+percent initial",
+        textinfo="value",
         opacity=0.65,
-        marker={"color": ["deepskyblue", "lightsalmon", "tan", "teal", "silver"],
-                "line": {"width": [4, 2, 2, 3, 1, 1], "color": ["wheat", "wheat", "blue", "wheat", "wheat"]}},
-        connector={"line": {"color": "royalblue", "dash": "dot", "width": 3}}
+        # marker={"color": ["deepskyblue", "lightsalmon", "tan", "teal", "silver"],
+        #         "line": {"width": [4, 2, 2, 3, 1, 1], "color": ["wheat", "wheat", "blue", "wheat", "wheat"]}},
+        # connector={"line": {"color": "royalblue", "dash": "dot", "width": 3}}
     )
-    # fig = go.Figure(
-    # )
 
-    return [go.Figure(data=trace)]
+
+    layout = {'template':'plotly_dark', 'title':{'text':'Количество товаров в сделках'}}
+    return [go.Figure(data=trace, layout=layout)]
+
 
 
 if __name__ == "__main__":
