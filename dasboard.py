@@ -12,7 +12,7 @@ import csv
 import os
 
 app = dash.Dash(__name__, external_stylesheets =[dbc.themes.BOOTSTRAP])
-
+app.title = "Demo dashboard"
 server = app.server
 
 makers = [{'label':" John Deere", 'value': "John Deere"},
@@ -41,113 +41,146 @@ deal_stages_list = ['phase_1', 'phase_2', 'phase_3', 'phase_4', 'phase_5']
 
 
 card_orders_ = [
-    dbc.CardHeader("Оборудование в заказах, ед  *"),
+    dbc.CardHeader("В заказах, ед  *"),
     dbc.CardBody([html.P(className="card-title", id = 'card_orders_today_value'),
-                  #html.P("План: 1 653 ед"),
-                  #html.P(className="card-text", id = 'card_orders_today_date'),
                   ]
                  ),]
 
 card_stock = [
-    dbc.CardHeader("Оборудование на складах, ед  *"),
+    dbc.CardHeader("На складах, ед  *"),
     dbc.CardBody([html.P(className="card-title", id = 'card_stock_today_value'),
                   ]
                  ),]
 card_deals = [
-    dbc.CardHeader("Оборудование в сделках, ед  *"),
+    dbc.CardHeader("В сделках, ед  *"),
     dbc.CardBody([html.P(className="card-title", id = 'card_deals_today_value'),
                   ]
                  ),]
 
 
 body = html.Div([
-    dbc.Container([
+    dbc.Container(
+        [
 
         # Заголовок Дашшборда
         html.Div(style={'paddingLeft': '15px', 'paddingRight': '20px', 'paddingTop': '5px', 'paddingBottom': '5px', 'color': 'white'},
                  children=[
-                     html.H2('ЗАКАЗЫ У ПОСТАВЩИКА - СКЛАД ДИЛЕРА - СДЕЛКИ')
+                     html.P(),
+                     html.H3('ОТЧЕТЫ'),
+                     html.P('Основные показатели отдела продаж техники'),
                  ]
                  ),
-        dbc.Row([
-            dbc.Col(width=3,
+        html.Div([
+            dcc.Tabs(
+                id="tabs-with-classes",
+                value='tab-orders',
+                parent_className='custom-tabs',
+                className='custom-tabs-container',
                 children=[
-                    html.Div(style={'paddingReft': '30px', 'paddingRight': '20px', 'marginTop': '10px', 'color': 'white'},
-                             children=[
-                                 html.P(),
-                                 html.B('Бренды'),
-                                 html.P(),
-                                 html.Div(style={'marginLeft': '3px'},
-                                          children=[
-                                              dbc.Button("Выбрать все", color="secondary", size="sm", id="select_all_makers_button", style={'marginBottom': '3px'}),
-                                              dbc.Button("Снять выбор", color="secondary", size="sm", style={'marginLeft': '3px', 'marginBottom': '3px'}, id="release_all_makers_button"),
-                                                    ]
-                                          ),
+                    dcc.Tab(
+                        label='ЗАКАЗЫ-СКЛАДЫ-СДЕЛКИ',
+                        value='tab-orders',
+                        className='custom-tab',
+                        selected_className='custom-tab--selected',
+                        children=[
+                            dbc.Row([
+                                        dbc.Col(width=3,
+                                            children=[
+                                                html.Div(style={'paddingReft': '30px', 'paddingRight': '20px', 'marginTop': '10px', 'color': 'white'},
+                                                         children=[
+                                                             html.P(),
+                                                             html.B('Бренды'),
+                                                             html.P(),
+                                                             html.Div(style={'marginLeft': '3px'},
+                                                                      children=[
+                                                                          dbc.Button("Выбрать все", size="sm", id="select_all_makers_button", style={'marginBottom': '3px', 'marginTop': '3px','backgroundColor': '#232632'}),
+                                                                          dbc.Button("Снять выбор", color="secondary", size="sm", style={'marginBottom': '3px', 'marginTop': '3px','backgroundColor': '#232632'}, id="release_all_makers_button"),
+                                                                                ]
+                                                                      ),
 
-                                 dcc.Checklist(id='maker_selector',
-                                               options=makers,
-                                               value=makers_list,
-                                               labelStyle = dict(display='block')),
+                                                             dcc.Checklist(id='maker_selector',
+                                                                           options=makers,
+                                                                           value=makers_list,
+                                                                           labelStyle = dict(display='block')),
 
-                                 html.P(),
-                                 html.B('Товарные группы'),
-                                 html.P(),
-                                 html.Div(style={'marginLeft': '3px'},
-                                          children=[
-                                              dbc.Button("Выбрать все", color="secondary", size="sm", id="select_all_product_groups_button", style={'marginBottom': '3px'}),
-                                              dbc.Button("Снять выбор", color="secondary", size="sm", style={'marginLeft': '3px', 'marginBottom': '3px'}, id="release_all_product_groups_button"),
-                                                    ]
-                                          ),
+                                                             html.P(),
+                                                             html.B('Товарные группы'),
+                                                             html.P(),
+                                                             html.Div(style={'marginLeft': '3px'},
+                                                                      children=[
+                                                                          dbc.Button("Выбрать все", color="secondary", size="sm", id="select_all_product_groups_button", style={'marginBottom': '3px', 'marginTop': '3px','backgroundColor': '#232632'}),
+                                                                          dbc.Button("Снять выбор", color="secondary", size="sm", style={'marginBottom': '3px', 'marginTop': '3px','backgroundColor': '#232632'}, id="release_all_product_groups_button"),
+                                                                                ]
+                                                                      ),
 
 
-                                 dcc.Checklist(id='product_group_selector_checklist',
-                                               options=product_groups,
-                                               value= product_groups_list,
-                                               labelStyle = dict(display='block')),
-                                 html.Hr(),
-                                 ##### Выбор этапа сделки
-                                 html.P(),
-                                 html.B('Этапы сделки'),
-                                 html.P(),
-                                 html.Div(style={'marginLeft': '3px'},
-                                          children=[
-                                              dbc.Button("Выбрать все", color="secondary", size="sm", id="select_all_deals_stage_button", style={'marginBottom': '3px'}),
-                                              dbc.Button("Снять выбор", color="secondary", size="sm", style={'marginLeft': '3px', 'marginBottom': '3px'}, id="release_all_deals_stage_button"),
-                                                    ]
-                                          ),
+                                                             dcc.Checklist(id='product_group_selector_checklist',
+                                                                           options=product_groups,
+                                                                           value= product_groups_list,
+                                                                           labelStyle = dict(display='block')),
+                                                             html.Hr(),
+                                                             ##### Выбор этапа сделки
+                                                             html.P(),
+                                                             html.B('Этапы сделки'),
+                                                             html.P(),
+                                                             html.Div(style={'marginLeft': '3px'},
+                                                                      children=[
+                                                                          dbc.Button("Выбрать все", color="secondary", size="sm", id="select_all_deals_stage_button", style={'marginBottom': '3px', 'marginTop': '3px','backgroundColor': '#232632'}),
+                                                                          dbc.Button("Снять выбор", color="secondary", size="sm", style={'marginBottom': '3px', 'marginTop': '3px','backgroundColor': '#232632'}, id="release_all_deals_stage_button"),
+                                                                                ]
+                                                                      ),
 
-                                 dcc.Checklist(id='deal_stage_selector_checklist',
-                                               options=deal_stages,
-                                               value= deal_stages_list,
-                                               labelStyle = dict(display='block')),
-                                 html.Hr(),
-                             ]
-                             ),
+                                                             dcc.Checklist(id='deal_stage_selector_checklist',
+                                                                           options=deal_stages,
+                                                                           value= deal_stages_list,
+                                                                           labelStyle = dict(display='block')),
+                                                             html.Hr(),
+                                                         ]
+                                                         ),
+                                            ]),
+                                        dbc.Col(width=9,
+                                            children=[
+                                                html.P(),
+                                                html.Div(style={'paddingLeft': '30px', 'paddingRight': '20px', 'paddingTop': '10px', 'color':'white'},
+                                                             children=[
+                                                                html.P('Динамика изменения запасов (в заказах + на складах) и спроса (в сделках)'),
+                                                                dbc.Row([
+                                                                        dbc.Col(dbc.Card(card_orders_, color="dark", inverse=True)),
+                                                                        dbc.Col(dbc.Card(card_stock, color="dark", inverse=True)),
+                                                                        dbc.Col(dbc.Card(card_deals, color="dark", inverse=True)),
+                                                                            ],
+
+                                                                        ),
+                                                                 html.P(className="card-text", id = 'card_orders_today_date'),
+                                                                 html.P(),
+                                                                 dcc.Graph(id='orders_stock_deals', config={'displayModeBar': False}),
+                                                                 html.P(),
+                                                                 dcc.Graph(id='funnel_graph'),
+                                                                 html.P(),
+
+
+                                                             ]),
+                                                ])
+
+                                    ])
+                        ]
+
+
+                    ),
+                    dcc.Tab(
+                        label='СДЕЛКИ',
+                        value='tab-deals',
+                        className='custom-tab',
+                        selected_className='custom-tab--selected'
+                    ),
+
                 ]),
-            dbc.Col(width=9,
-                children=[
-                    html.P(),
-                    html.Div(style={'paddingLeft': '30px', 'paddingRight': '20px', 'paddingTop': '10px'},
-                                 children=[
-                                    dbc.Row([
-                                            dbc.Col(dbc.Card(card_orders_, color="dark", inverse=True)),
-                                            dbc.Col(dbc.Card(card_stock, color="dark", inverse=True)),
-                                            dbc.Col(dbc.Card(card_deals, color="dark", inverse=True)),
-                                                ],
-
-                                            ),
-                                     html.P(className="card-text", id = 'card_orders_today_date'),
-                                     html.P(),
-                                     dcc.Graph(id='orders_stock_deals', config={'displayModeBar': False}),
+            html.Div(id='tabs-content-classes')
+        ]),
 
 
-                                 ]),
-                    ])
-
-        ])
-
-    ], fluid=True,style={'backgroundColor': '#19202A'})
-],)
+    ], fluid=True, className='custom_container')
+],style={"height": "100vh"},)
 
 
 # передаем разметку страницы в приложение
@@ -206,7 +239,6 @@ def button_productgroup_callback_func(select_all_product_groups_button, release_
         selected_values = []
         return selected_values
     return full_list
-
 
 orders_delivery_df = pd.read_csv('data/orders_delivery_df.csv')
 dealer_stockin_stockout_df = pd.read_csv('data/dealer_stockin_stockout.csv')
@@ -328,7 +360,6 @@ def orders_stock(selected_maker, selected_product_groups, selected_deal_stages):
     stock_qty_today = today_df_stock.iloc[0]['cumsum']
 
 
-
     fig = go.Figure()
     #Ожидаемые поставки у поставщика
     fig.add_trace(go.Bar(
@@ -398,6 +429,42 @@ def orders_stock(selected_maker, selected_product_groups, selected_deal_stages):
     today_to_card = datetime.datetime.now()
     today_to_card = today_to_card.strftime("%d.%m.%Y")
     return fig, '{}'.format(orders_qty_today), '* По состоянию на {}'.format(today_to_card), format(stock_qty_today), format(deals_qty_today)
+
+# callback Воронка продаж
+@app.callback([Output('funnel_graph', 'figure'),
+               ],
+              [Input('maker_selector', 'value'),
+               Input('product_group_selector_checklist', 'value'),
+               #Input('deal_stage_selector_checklist', 'value'),
+               ])
+def funnel(selected_maker, selected_product_groups):
+    df_deals = pd.read_csv('data/df_deals.csv')
+    df_deals_filtered_by_inputs = df_deals[
+        df_deals['product_group_code'].isin(selected_product_groups) &
+        df_deals['manufacturer'].isin(selected_maker) |
+        df_deals['deal_status'].isin(['empty'])
+        ]
+    df_deals_filtered_by_inputs = df_deals_filtered_by_inputs[['date', 'deal_stage_code', 'deal_stage_name','qty']]
+    today = datetime.datetime.now()
+    today_str = today.strftime("%Y-%m-%d")
+    today_funnel_df = df_deals_filtered_by_inputs[df_deals_filtered_by_inputs['date'] == today_str]
+
+    df_deals_groupped = today_funnel_df.groupby('deal_stage_name', as_index=False)["qty"].sum()
+    trace = go.Funnel(
+        y=["Website visit", "Downloads", "Potential customers", "Requested price", "Finalized"],
+        x=[39, 27.4, 20.6, 11, 2],
+        textposition="inside",
+        textinfo="value+percent initial",
+        opacity=0.65,
+        marker={"color": ["deepskyblue", "lightsalmon", "tan", "teal", "silver"],
+                "line": {"width": [4, 2, 2, 3, 1, 1], "color": ["wheat", "wheat", "blue", "wheat", "wheat"]}},
+        connector={"line": {"color": "royalblue", "dash": "dot", "width": 3}}
+    )
+    # fig = go.Figure(
+    # )
+
+    return [go.Figure(data=trace)]
+
 
 if __name__ == "__main__":
     app.run_server(debug = True)
