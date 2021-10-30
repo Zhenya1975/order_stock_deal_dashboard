@@ -66,8 +66,8 @@ body = html.Div([
         html.Div(style={'paddingLeft': '15px', 'paddingRight': '20px', 'paddingTop': '5px', 'paddingBottom': '5px', 'color': 'white'},
                  children=[
                      html.P(),
-                     html.H3('ОТЧЕТЫ'),
-                     html.P('Основные показатели отдела продаж техники'),
+                     html.H3('ПОКАЗАТЕЛИ ОТДЕЛА ПРОДАЖ ТЕХНИКИ'),
+                     #html.P('Основные показатели отдела продаж техники'),
                  ]
                  ),
         html.Div([
@@ -333,20 +333,21 @@ def orders_stock(selected_maker, selected_product_groups, selected_deal_stages):
                                                     orders_delivery_df['manufacturer'].isin(selected_maker) |
                                                     orders_delivery_df['action_type'].isin(['empty'])]
 
-    df_orders_filtered_by_inputs.to_csv('data/temp1.csv')
-    df_graph_orders = pd.read_csv('data/temp1.csv')
-    os.remove('data/temp1.csv')
+    # df_orders_filtered_by_inputs.to_csv('data/temp1.csv')
+    # df_graph_orders = pd.read_csv('data/temp1.csv')
+    # os.remove('data/temp1.csv')
     #df_graph_orders['date'] = pd.to_datetime(df_graph_orders['date'], infer_datetime_format=True).date()
     #df_graph_orders.to_csv('data/temp_df_graph_orders.csv')
     #df_graph_orders = df_graph_orders[df_graph_orders['date'] <= datetime.datetime.now()]
-
+    df_graph_orders = df_orders_filtered_by_inputs
     df_graph_orders['cumsum'] = df_graph_orders['qty'].cumsum()
     df_graph_orders_data = df_graph_orders[['date', 'cumsum']]
     df_graph_orders_groupped = df_graph_orders_data.groupby('date').tail(1)
-    df_graph_orders_groupped.to_csv('data/temp.csv')
-    df_graph_orders_groupped = pd.read_csv('data/temp.csv')
+
+    # df_graph_orders_groupped.to_csv('data/temp.csv')
+    # df_graph_orders_groupped = pd.read_csv('data/temp.csv')
     df_graph_orders_groupped['date'] = pd.to_datetime(df_graph_orders_groupped['date'], infer_datetime_format=True)
-    os.remove('data/temp.csv')
+    # os.remove('data/temp.csv')
     start_date_orders = datetime.datetime.strptime("01.01.2021", "%d.%m.%Y")
     end_date_orders = datetime.datetime.now()
     after_start_date_orders = df_graph_orders_groupped["date"] >= start_date_orders
@@ -408,9 +409,10 @@ def orders_stock(selected_maker, selected_product_groups, selected_deal_stages):
         dealer_stockin_stockout_df['manufacturer'].isin(selected_maker) |
         dealer_stockin_stockout_df['action_type'].isin(['empty'])]
 
-    df_stock_filtered_by_inputs.to_csv('data/temp2.csv')
-    df_graph_stock = pd.read_csv('data/temp2.csv')
-    os.remove('data/temp2.csv')
+    # df_stock_filtered_by_inputs.to_csv('data/temp2.csv')
+    # df_graph_stock = pd.read_csv('data/temp2.csv')
+    # os.remove('data/temp2.csv')
+    df_graph_stock = df_stock_filtered_by_inputs
 
     df_graph_stock['cumsum'] = df_graph_stock['qty'].cumsum()
     #df_graph_stock.to_csv('data/df_graph_stock_with_cumsum_delete.csv')
@@ -418,9 +420,11 @@ def orders_stock(selected_maker, selected_product_groups, selected_deal_stages):
     #df_graph_stock_data_groupped.to_csv('data/df_graph_stock_data_groupped_to_delete.csv')
     df_graph_stock_data_groupped_date_and_cumsum = df_graph_stock_data_groupped[['date', 'cumsum']]
 
-    df_graph_stock_data_groupped_date_and_cumsum.to_csv('data/df_graph_stock_data_groupped.csv')
-    df_graph_stock_data_groupped_date_and_cumsum = pd.read_csv('data/df_graph_stock_data_groupped.csv')
-    os.remove('data/df_graph_stock_data_groupped.csv')
+    # df_graph_stock_data_groupped_date_and_cumsum.to_csv('data/df_graph_stock_data_groupped.csv')
+    # df_graph_stock_data_groupped_date_and_cumsum = pd.read_csv('data/df_graph_stock_data_groupped.csv')
+    # os.remove('data/df_graph_stock_data_groupped.csv')
+
+
     df_graph_stock_data_groupped_date_and_cumsum['date'] = pd.to_datetime(df_graph_stock_data_groupped_date_and_cumsum['date'], infer_datetime_format=True)
     #os.remove('data/df_graph_stock_data_groupped.csv')
     start_date_stock = datetime.datetime.strptime("01.01.2021", "%d.%m.%Y")
