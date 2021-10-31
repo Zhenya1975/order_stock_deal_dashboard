@@ -63,6 +63,19 @@ card_tab_deals_qty_in_deals = [
                   ]
                  ),]
 
+card_tab_deals_won_deals = [
+    dbc.CardHeader("Продано в 2021г., ед *"),
+    dbc.CardBody([html.P(className="card-title", id = 'card_deals_tab_deals_won_in_2021'),
+                  ]
+                 ),]
+
+card_tab_deals_lost_deals = [
+    dbc.CardHeader("Проиграно, ед *"),
+    dbc.CardBody([html.P(className="card-title", id = 'card_deals_tab_deals_lost_in_2021'),
+                  ]
+                 ),]
+
+
 body = html.Div([
     dbc.Container(
         [
@@ -244,9 +257,13 @@ body = html.Div([
                                                             'paddingTop': '10px', 'color': 'white'},
                                                      children=[
                                                          dbc.Row([
-                                                                dbc.Col(dbc.Card(card_tab_deals_qty_in_deals, color="dark", inverse=True)),
-                                                                # dbc.Col(dbc.Card(card_stock, color="dark", inverse=True)),
-                                                                # dbc.Col(dbc.Card(card_deals, color="dark", inverse=True)),
+                                                                dbc.Col(
+                                                                    dbc.Card(card_tab_deals_qty_in_deals, color="dark", inverse=True)
+                                                                ),
+                                                                dbc.Col(
+                                                                    dbc.Card(card_tab_deals_won_deals, color="dark", inverse=True)
+                                                                ),
+                                                                dbc.Col(dbc.Card(card_tab_deals_lost_deals, color="dark", inverse=True)),
                                                                     ],
                                                          ),
                                                          html.P(className="card-text", id = 'card_deals_today_date'),
@@ -273,6 +290,7 @@ body = html.Div([
 
 # передаем разметку страницы в приложение
 app.layout = html.Div([body])
+
 
 @app.callback(
     Output("deal_stage_selector_checklist", "value"),
@@ -561,22 +579,24 @@ def orders_stock(selected_maker, selected_product_groups, selected_deal_stages):
     return fig, '{}'.format(orders_qty_today), '* По состоянию на {}'.format(today_to_card), format(stock_qty_today), format(deals_qty_today)
 
 # callback Воронка продаж
-@app.callback([Output('funnel_graph', 'figure'),
+@app.callback([Output('funnel_graph', 'figure'), #
                Output('card_deals_tab_deals_today_value', 'children'),
+               Output('card_deals_tab_deals_won_in_2021', 'children'),
+               Output('card_deals_tab_deals_lost_in_2021', 'children'),
                Output('card_deals_today_date', 'children'),
                ],
               [Input('maker_selector_tab_deals', 'value'),
                Input('product_group_selector_checklist_tab_deals', 'value'),
                #Input('deal_stage_selector_checklist', 'value'),
                ])
-def funnel(selected_maker, selected_product_groups):
+def deals_tab(selected_maker, selected_product_groups):
     df_deals = pd.read_csv('data/df_deals.csv')
     df_deals_filtered_by_inputs = df_deals[
         df_deals['product_group_code'].isin(selected_product_groups) &
         df_deals['manufacturer'].isin(selected_maker) |
         df_deals['deal_status'].isin(['empty'])
         ]
-    df_deals_filtered_by_inputs = df_deals_filtered_by_inputs[['date', 'deal_stage_code', 'deal_stage_name','qty']]
+    df_deals_filtered_by_inputs = df_deals_filtered_by_inputs[['date', 'milestone_event', 'deal_stage_code', 'deal_stage_name','qty']]
     today = datetime.datetime.now()
     today_str = today.strftime("%Y-%m-%d")
     today_funnel_df = df_deals_filtered_by_inputs[df_deals_filtered_by_inputs['date'] == today_str]
@@ -605,7 +625,35 @@ def funnel(selected_maker, selected_product_groups):
     for key, val in deal_stages_zeros.items():
         x_graph.append([val][0])
 
+    # deals_qty_today - для карточки Количество товаров в сделках на сегодняшний день
     deals_qty_today = df_deals_groupped['qty'].sum()
+
+    # считаем сколько машин мы продали
+    deal_won = df_deals_filtered_by_inputs[df_deals_filtered_by_inputs['milestone_event'] == 'deal_won']
+    # переводим поле "Дата" в формат времени
+    deal_won['date'] = pd.to_datetime(deal_won['date'], infer_datetime_format=True)
+    # начало года - формат времени
+    start_date_deal_won = datetime.datetime.strptime("01.01.2021", "%d.%m.%Y")
+    end_date_deal_won = datetime.datetime.now()
+    after_start_date_won = deal_won["date"] >= start_date_deal_won
+    before_end_date_won = deal_won["date"] <= end_date_deal_won
+    between_two_dates = after_start_date_won & before_end_date_won
+    deal_won_groupped_2021 = deal_won.loc[between_two_dates]
+    won_qty_2021 = deal_won_groupped_2021['qty'].sum()
+
+    # считаем сколько машин мы проиграли
+    deal_lost = df_deals_filtered_by_inputs[df_deals_filtered_by_inputs['milestone_event'] == 'deal_lost']
+    # переводим поле "Дата" в формат времени
+    deal_lost['date'] = pd.to_datetime(deal_lost['date'], infer_datetime_format=True)
+    # начало года - формат времени
+    start_date_deal_lost = datetime.datetime.strptime("01.01.2021", "%d.%m.%Y")
+    end_date_deal_lost = datetime.datetime.now()
+    after_start_date_lost = deal_lost["date"] >= start_date_deal_lost
+    before_end_date_lost = deal_lost["date"] <= end_date_deal_lost
+    between_two_dates = after_start_date_lost & before_end_date_lost
+    deal_lost_groupped_2021 = deal_lost.loc[between_two_dates]
+    lost_qty_2021 = deal_lost_groupped_2021['qty'].sum()
+
 
     trace = go.Funnel(
         #y=["Website visit", "Downloads", "Potential customers", "Requested price", "Finalized"],
@@ -621,8 +669,8 @@ def funnel(selected_maker, selected_product_groups):
     today_to_card = datetime.datetime.now()
     today_to_card = today_to_card.strftime("%d.%m.%Y")
 
-    layout = {'template':'plotly_dark', 'title':{'text':'Количество товаров в сделках'}}
-    return go.Figure(data=trace, layout=layout), '{}'.format(deals_qty_today), '* По состоянию на {}'.format(today_to_card)
+    layout = {'template':'plotly_dark', 'title':{'text':'Товары в сделках по этапам, ед'}}
+    return go.Figure(data=trace, layout=layout), '{}'.format(deals_qty_today), '{}'.format(won_qty_2021), '{}'.format(lost_qty_2021),'* По состоянию на {}'.format(today_to_card)
 
 
 if __name__ == "__main__":
