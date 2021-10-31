@@ -41,22 +41,27 @@ deal_stages_list = ['phase_1', 'phase_2', 'phase_3', 'phase_4', 'phase_5']
 
 
 card_orders_ = [
-    dbc.CardHeader("В заказах, ед  *"),
+    dbc.CardHeader("В заказах, ед *"),
     dbc.CardBody([html.P(className="card-title", id = 'card_orders_today_value'),
                   ]
                  ),]
 
 card_stock = [
-    dbc.CardHeader("На складах, ед  *"),
+    dbc.CardHeader("На складах, ед *"),
     dbc.CardBody([html.P(className="card-title", id = 'card_stock_today_value'),
                   ]
                  ),]
 card_deals = [
-    dbc.CardHeader("В сделках, ед  *"),
+    dbc.CardHeader("В сделках, ед *"),
     dbc.CardBody([html.P(className="card-title", id = 'card_deals_today_value'),
                   ]
                  ),]
 
+card_tab_deals_qty_in_deals = [
+    dbc.CardHeader("Товары в сделках, ед *"),
+    dbc.CardBody([html.P(className="card-title", id = 'card_deals_tab_deals_today_value'),
+                  ]
+                 ),]
 
 body = html.Div([
     dbc.Container(
@@ -238,7 +243,14 @@ body = html.Div([
                                             html.Div(style={'paddingLeft': '30px', 'paddingRight': '20px',
                                                             'paddingTop': '10px', 'color': 'white'},
                                                      children=[
-                                                         html.P('Воронка продаж'),
+                                                         dbc.Row([
+                                                                dbc.Col(dbc.Card(card_tab_deals_qty_in_deals, color="dark", inverse=True)),
+                                                                # dbc.Col(dbc.Card(card_stock, color="dark", inverse=True)),
+                                                                # dbc.Col(dbc.Card(card_deals, color="dark", inverse=True)),
+                                                                    ],
+                                                         ),
+                                                         html.P(className="card-text", id = 'card_deals_today_date'),
+
                                                          html.P(),
                                                          dcc.Graph(id='funnel_graph',config={'displayModeBar': False}),
                                                          html.P(),
@@ -550,6 +562,8 @@ def orders_stock(selected_maker, selected_product_groups, selected_deal_stages):
 
 # callback Воронка продаж
 @app.callback([Output('funnel_graph', 'figure'),
+               Output('card_deals_tab_deals_today_value', 'children'),
+               Output('card_deals_today_date', 'children'),
                ],
               [Input('maker_selector_tab_deals', 'value'),
                Input('product_group_selector_checklist_tab_deals', 'value'),
@@ -566,12 +580,37 @@ def funnel(selected_maker, selected_product_groups):
     today = datetime.datetime.now()
     today_str = today.strftime("%Y-%m-%d")
     today_funnel_df = df_deals_filtered_by_inputs[df_deals_filtered_by_inputs['date'] == today_str]
-
     df_deals_groupped = today_funnel_df.groupby('deal_stage_name', as_index=False)["qty"].sum()
+
+
+
+    ##### Готовим списки X и Y для построения графика
+    # сначала готовим словарь с нулевыми значеними
+    deal_stages_zeros = {}
+    deal_stages_zeros['1. Выявление потребности'] = 0
+    deal_stages_zeros['2. Презентационная работа'] = 0
+    deal_stages_zeros['3. Переговоры'] = 0
+    deal_stages_zeros['4. Заключение договора'] = 0
+    deal_stages_zeros['5. Отгрузка и закрытие сделки'] = 0
+    # затем переписываем строки в словаре значеними. Нули должны остаться
+    for index, row in df_deals_groupped.iterrows():
+        deal_stage_name_in_selection = row['deal_stage_name']
+        deal_stage_qty_in_selection = row['qty']
+        deal_stages_zeros[deal_stage_name_in_selection] = deal_stage_qty_in_selection
+
+    y_graph = []
+    for key, val in deal_stages_zeros.items():
+        y_graph.append([key][0])
+    x_graph = []
+    for key, val in deal_stages_zeros.items():
+        x_graph.append([val][0])
+
+    deals_qty_today = df_deals_groupped['qty'].sum()
+
     trace = go.Funnel(
         #y=["Website visit", "Downloads", "Potential customers", "Requested price", "Finalized"],
-        y = df_deals_groupped['deal_stage_name'],
-        x=df_deals_groupped['qty'],
+        y = y_graph,
+        x=x_graph,
         textposition="inside",
         textinfo="value",
         opacity=0.65,
@@ -579,11 +618,11 @@ def funnel(selected_maker, selected_product_groups):
         #         "line": {"width": [4, 2, 2, 3, 1, 1], "color": ["wheat", "wheat", "blue", "wheat", "wheat"]}},
         # connector={"line": {"color": "royalblue", "dash": "dot", "width": 3}}
     )
-
+    today_to_card = datetime.datetime.now()
+    today_to_card = today_to_card.strftime("%d.%m.%Y")
 
     layout = {'template':'plotly_dark', 'title':{'text':'Количество товаров в сделках'}}
-    return [go.Figure(data=trace, layout=layout)]
-
+    return go.Figure(data=trace, layout=layout), '{}'.format(deals_qty_today), '* По состоянию на {}'.format(today_to_card)
 
 
 if __name__ == "__main__":

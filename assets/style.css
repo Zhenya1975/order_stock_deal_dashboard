@@ -66,7 +66,7 @@
 
 .hr {
     border: none; /* Убираем границу для браузера Firefox */
-    color: white; /* Цвет линии для остальных браузеров */
-    background-color: white; /* Цвет линии для браузера Firefox и Opera */
+    color: gray; /* Цвет линии для остальных браузеров */
+    background-color: gray; /* Цвет линии для браузера Firefox и Opera */
     height: 2px; /* Толщина линии */
    }
