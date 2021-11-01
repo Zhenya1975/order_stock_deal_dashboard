@@ -12,70 +12,17 @@ import plotly.graph_objects as go
 import tab_deal
 import tab_order
 import tab_plan_fact
+import initial_values
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 app.title = "Demo dashboard"
 server = app.server
 
-makers = [{'label': " John Deere", 'value': "John Deere"},
-          {'label': " JCB", 'value': "JCB"},
-          {'label': " Kuhn", 'value': "KUHN"}, ]
-
-makers_list = ["John Deere", "JCB", "KUHN"]
-
-product_groups = [{'label': " Тракторы", 'value': "TR"},
-                  {'label': " З/У комбайны", 'value': "HARV"},
-                  {'label': " Прицепное оборудование", 'value': "TL"},
-                  {'label': " Опрыскиватели", 'value': "SPR"},
-                  {'label': " Погрузчики", 'value': "LDR"}, ]
-
-product_groups_list = ["TR", "HARV", "TL", "SPR", "LDR"]
-
-deal_stages = [
-    {'label': ' 1. Выявление потребности', 'value': 'phase_1'},
-    {'label': ' 2. Презентационная работа', 'value': 'phase_2'},
-    {'label': ' 3. Переговоры', 'value': 'phase_3'},
-    {'label': ' 4. Заключение договора', 'value': 'phase_4'},
-    {'label': ' 5. Отгрузка и закрытие сделки', 'value': 'phase_5'}, ]
-
-deal_stages_list = ['phase_1', 'phase_2', 'phase_3', 'phase_4', 'phase_5']
-
-card_orders_ = [
-    dbc.CardHeader("В заказах, ед *"),
-    dbc.CardBody([html.P(className="card-title", id='card_orders_today_value'),
-                  ]
-                 ), ]
-
-card_stock = [
-    dbc.CardHeader("На складах, ед *"),
-    dbc.CardBody([html.P(className="card-title", id='card_stock_today_value'),
-                  ]
-                 ), ]
-card_deals = [
-    dbc.CardHeader("В сделках, ед *"),
-    dbc.CardBody([html.P(className="card-title", id='card_deals_today_value'),
-                  ]
-                 ), ]
-
-card_tab_deals_qty_in_deals = [
-    dbc.CardHeader("Товары в сделках, ед *"),
-    dbc.CardBody([html.P(className="card-title", id='card_deals_tab_deals_today_value'),
-                  ]
-                 ), ]
-
-card_tab_deals_won_deals = [
-    dbc.CardHeader("Продано в 2021г., ед *"),
-    dbc.CardBody([html.P(className="card-title", id='card_deals_tab_deals_won_in_2021'),
-                  ]
-                 ), ]
-
-card_tab_deals_lost_deals = [
-    dbc.CardHeader("Проиграно, ед *"),
-    dbc.CardBody([html.P(className="card-title", id='card_deals_tab_deals_lost_in_2021'),
-                  ]
-                 ), ]
-
-
+makers = initial_values.makers
+makers_list = initial_values.makers_list
+product_groups = initial_values.product_groups
+product_groups_list = initial_values.product_groups_list
+deal_stages = initial_values.deal_stages
 
 body = html.Div([
     dbc.Container(
@@ -87,19 +34,16 @@ body = html.Div([
                      children=[
                          dbc.Row([
                              dbc.Col(width=3,
-                                     children=[html.Img(src="static/logo RB.png", width=300),]
+                                     children=[html.Img(src="static/logo RB.png", width=300), ]
                                      ),
                              dbc.Col(width=9,
-                                 children=[html.H3('MANAGEMENT DASHBOARD'),]
+                                     children=[html.H3('БИЗНЕС АНАЛИТИКА'), ]
 
-                             ),
+                                     ),
                          ]),
 
                          html.P(),
-
-
-
-                         # html.P('Основные показатели отдела продаж техники'),
+                         html.P('Бизнес показатели отдела продаж техники'),
                      ]
                      ),
             html.Div([
@@ -216,6 +160,7 @@ def button_callback_func(select_all_makers_button, release_all_makers_button, op
 orders_delivery_df = pd.read_csv('data/orders_delivery_df.csv')
 dealer_stockin_stockout_df = pd.read_csv('data/dealer_stockin_stockout.csv')
 
+
 @app.callback([Output('orders_stock_deals', 'figure'),
                Output('card_orders_today_value', 'children'),
                Output('card_orders_today_date', 'children'),
@@ -227,109 +172,102 @@ dealer_stockin_stockout_df = pd.read_csv('data/dealer_stockin_stockout.csv')
                Input('deal_stage_selector_checklist', 'value'),
                ])
 def orders_stock(selected_maker, selected_product_groups, selected_deal_stages):
-    df_orders_filtered_by_inputs = orders_delivery_df[
+    df_orders_filtered_by_inputs = orders_delivery_df.loc[
         orders_delivery_df['product_group_code'].isin(selected_product_groups) &
         orders_delivery_df['action_type'].isin(['order', 'delivery']) &
         orders_delivery_df['manufacturer'].isin(selected_maker) |
         orders_delivery_df['action_type'].isin(['empty'])]
 
-    df_graph_orders = df_orders_filtered_by_inputs
-    df_graph_orders['cumsum'] = df_graph_orders['qty'].cumsum()
-    df_graph_orders_data = df_graph_orders[['date', 'cumsum']]
-    df_graph_orders_groupped = df_graph_orders_data.groupby('date').tail(1)
+    df_orders_filtered_by_inputs.loc[:, 'cumsum'] = df_orders_filtered_by_inputs['qty'].cumsum()
 
-    df_graph_orders_groupped['date'] = pd.to_datetime(df_graph_orders_groupped['date'], infer_datetime_format=True)
+    df_graph_orders_groupped = df_orders_filtered_by_inputs.groupby('date').tail(1)
+
+    df_graph_orders_groupped.loc[:, 'date'] = pd.to_datetime(df_graph_orders_groupped['date'],
+                                                             infer_datetime_format=True)
 
     start_date_orders = datetime.datetime.strptime("01.01.2021", "%d.%m.%Y")
     end_date_orders = datetime.datetime.now()
-    after_start_date_orders = df_graph_orders_groupped["date"] >= start_date_orders
-    before_end_date_orders = df_graph_orders_groupped["date"] <= end_date_orders
+    after_start_date_orders = df_graph_orders_groupped.loc[:, "date"] >= start_date_orders
+    before_end_date_orders = df_graph_orders_groupped.loc[:, "date"] <= end_date_orders
     between_two_dates = after_start_date_orders & before_end_date_orders
     df_graph_orders_groupped_2021 = df_graph_orders_groupped.loc[between_two_dates]
     today = datetime.datetime.now()
     today_str = today.strftime("%Y-%m-%d")
 
-    today_df = df_graph_orders_groupped_2021[df_graph_orders_groupped_2021['date'] == today_str]
+    today_df = df_graph_orders_groupped_2021.loc[df_graph_orders_groupped_2021['date'] == today_str]
     orders_qty_today = today_df.iloc[0]['cumsum']
 
     # данные для ряда Сделки
     df_deals = pd.read_csv('data/df_deals.csv')
-    df_deals_filtered_by_inputs = df_deals[
+    df_deals_filtered_by_inputs = df_deals.loc[
         df_deals['product_group_code'].isin(selected_product_groups) &
         df_deals['deal_stage_code'].isin(selected_deal_stages) &
         df_deals['manufacturer'].isin(selected_maker) |
         df_deals['deal_status'].isin(['empty'])
         ]
-    df_deals_filtered_by_inputs = df_deals_filtered_by_inputs[['date', 'qty']]
+
     df_deals_groupped = df_deals_filtered_by_inputs.groupby('date', as_index=False)["qty"].sum()
 
-    df_deals_groupped['date'] = pd.to_datetime(df_deals_groupped['date'], infer_datetime_format=True)
+    df_deals_groupped.loc[:, 'date'] = pd.to_datetime(df_deals_groupped['date'], infer_datetime_format=True)
     start_date_deal = datetime.datetime.strptime("01.01.2021", "%d.%m.%Y")
     end_date_deal = datetime.datetime.now()
-    after_start_date_deal = df_deals_groupped["date"] >= start_date_deal
-    before_end_date_deal = df_deals_groupped["date"] <= end_date_deal
+    after_start_date_deal = df_deals_groupped.loc[:, "date"] >= start_date_deal
+    before_end_date_deal = df_deals_groupped.loc[:, "date"] <= end_date_deal
     between_two_dates_deals = after_start_date_deal & before_end_date_deal
     # between_two_dates = after_start_date_deal
     df_deals_groupped_2021 = df_deals_groupped.loc[between_two_dates_deals]
 
     # данные для ряда Ожидаемые сделки.
     expected_deals_start_date = datetime.datetime.now()
-    expected_deals_end_date = df_deals_groupped['date'].max()
-    after_start_date_expected_deals = df_deals_groupped["date"] >= expected_deals_start_date
-    before_end_date_expected_deals = df_deals_groupped["date"] <= expected_deals_end_date
+    expected_deals_end_date = df_deals_groupped.loc[:, 'date'].max()
+    after_start_date_expected_deals = df_deals_groupped.loc[:, "date"] >= expected_deals_start_date
+    before_end_date_expected_deals = df_deals_groupped.loc[:, "date"] <= expected_deals_end_date
     between_two_dates_expected_deals = after_start_date_expected_deals & before_end_date_expected_deals
     df_expected_deals_groupped_2021 = df_deals_groupped.loc[between_two_dates_expected_deals]
 
-    ########## готовим данные для ряда Ожидаемые поставки
-    df_expected_orders = df_graph_orders_groupped
-    start_date_orders = datetime.datetime.now()
-    end_date_orders = df_expected_orders['date'].max()
-    after_start_date_orders = df_expected_orders["date"] >= start_date_orders
-    before_end_date_orders = df_expected_orders["date"] <= end_date_orders
-    between_two_dates = after_start_date_orders & before_end_date_orders
-    df_expected_orders_2021 = df_expected_orders.loc[between_two_dates]
-    df_expected_orders_2021 = df_expected_orders_2021[df_expected_orders_2021['cumsum'] > 0]
+    # готовим данные для ряда Ожидаемые поставки
+    # df_expected_orders = df_graph_orders_groupped
+    start_date_expected_orders = datetime.datetime.now()
+    end_date_expected_orders = df_graph_orders_groupped.loc[:, 'date'].max()
+    after_start_date_expected_orders = df_graph_orders_groupped.loc[:, "date"] >= start_date_expected_orders
+    before_end_date_expected_orders = df_graph_orders_groupped.loc[:, "date"] <= end_date_expected_orders
+    between_two_dates = after_start_date_expected_orders & before_end_date_expected_orders
+    df_expected_orders_2021 = df_graph_orders_groupped.loc[between_two_dates]
+    df_expected_orders_2021_ = df_expected_orders_2021.loc[df_expected_orders_2021['cumsum'] > 0]
 
     # Данные для ряда STOCK
-    df_stock_filtered_by_inputs = dealer_stockin_stockout_df[
+    df_stock_filtered_by_inputs = dealer_stockin_stockout_df.loc[
         dealer_stockin_stockout_df['product_group_code'].isin(selected_product_groups) &
         dealer_stockin_stockout_df['action_type'].isin(['stockin', 'stockout']) &
         dealer_stockin_stockout_df['manufacturer'].isin(selected_maker) |
         dealer_stockin_stockout_df['action_type'].isin(['empty'])]
 
-    # df_stock_filtered_by_inputs.to_csv('data/temp2.csv')
-    # df_graph_stock = pd.read_csv('data/temp2.csv')
-    # os.remove('data/temp2.csv')
-    df_graph_stock = df_stock_filtered_by_inputs
+    # df_graph_stock = df_stock_filtered_by_inputs
 
-    df_graph_stock['cumsum'] = df_graph_stock['qty'].cumsum()
+    df_stock_filtered_by_inputs.loc[:, 'cumsum'] = df_stock_filtered_by_inputs['qty'].cumsum()
     # df_graph_stock.to_csv('data/df_graph_stock_with_cumsum_delete.csv')
-    df_graph_stock_data_groupped = df_graph_stock.groupby('date').tail(1)
+    df_graph_stock_data_groupped = df_stock_filtered_by_inputs.groupby('date').tail(1)
     # df_graph_stock_data_groupped.to_csv('data/df_graph_stock_data_groupped_to_delete.csv')
-    df_graph_stock_data_groupped_date_and_cumsum = df_graph_stock_data_groupped[['date', 'cumsum']]
+    df_graph_stock_data_groupped_date_and_cumsum = df_graph_stock_data_groupped.loc[:, ['date', 'cumsum']]
 
-    # df_graph_stock_data_groupped_date_and_cumsum.to_csv('data/df_graph_stock_data_groupped.csv')
-    # df_graph_stock_data_groupped_date_and_cumsum = pd.read_csv('data/df_graph_stock_data_groupped.csv')
-    # os.remove('data/df_graph_stock_data_groupped.csv')
-
-    df_graph_stock_data_groupped_date_and_cumsum['date'] = pd.to_datetime(
+    df_graph_stock_data_groupped_date_and_cumsum.loc[:, 'date'] = pd.to_datetime(
         df_graph_stock_data_groupped_date_and_cumsum['date'], infer_datetime_format=True)
-    # os.remove('data/df_graph_stock_data_groupped.csv')
+
     start_date_stock = datetime.datetime.strptime("01.01.2021", "%d.%m.%Y")
     end_date_stock = datetime.datetime.now()
-    after_start_date_stock = df_graph_stock_data_groupped_date_and_cumsum["date"] >= start_date_stock
-    before_end_date_stock = df_graph_stock_data_groupped_date_and_cumsum["date"] <= end_date_stock
+    after_start_date_stock = df_graph_stock_data_groupped_date_and_cumsum.loc[:, "date"] >= start_date_stock
+    before_end_date_stock = df_graph_stock_data_groupped_date_and_cumsum.loc[:, "date"] <= end_date_stock
     between_two_dates = after_start_date_stock & before_end_date_stock
     df_graph_stock_data_groupped_2021 = df_graph_stock_data_groupped_date_and_cumsum.loc[between_two_dates]
     # df_graph_stock_data_groupped_2021.to_csv('data/df_graph_stock_data_groupped_2101.csv')
-    today_df_stock = df_graph_stock_data_groupped_2021[df_graph_stock_data_groupped_2021['date'] == today_str]
+    today_df_stock = df_graph_stock_data_groupped_2021.loc[df_graph_stock_data_groupped_2021['date'] == today_str]
     stock_qty_today = today_df_stock.iloc[0]['cumsum']
 
     fig = go.Figure()
     # Ожидаемые поставки у поставщика
     fig.add_trace(go.Bar(
-        x=df_expected_orders_2021['date'],
-        y=df_expected_orders_2021['cumsum'],
+        x=df_expected_orders_2021_['date'],
+        y=df_expected_orders_2021_['cumsum'],
         # fill='tozeroy',
         name='В заказах у поставщика, ед',
     ))
@@ -370,7 +308,7 @@ def orders_stock(selected_maker, selected_product_groups, selected_deal_stages):
     ))
 
     date_range_min = datetime.datetime.strptime("01.01.2021", "%d.%m.%Y")
-    date_range_max = df_deals_groupped['date'].max()
+    date_range_max = df_deals_groupped.loc[:, 'date'].max()
 
     fig.update_xaxes(rangeslider_visible=True, )
 
@@ -387,7 +325,7 @@ def orders_stock(selected_maker, selected_product_groups, selected_deal_stages):
                       # title={'text': 'Техника в заказах, на складах и сделках, ед', 'font': {'color': 'white'}, 'x': 0.5},
                       )
 
-    today_df_deals = df_deals_groupped[df_deals_groupped['date'] == today_str]
+    today_df_deals = df_deals_groupped.loc[df_deals_groupped['date'] == today_str]
     deals_qty_today = today_df_deals.iloc[0]['qty']
 
     today_to_card = datetime.datetime.now()
@@ -395,7 +333,10 @@ def orders_stock(selected_maker, selected_product_groups, selected_deal_stages):
     return fig, '{}'.format(orders_qty_today), '* По состоянию на {}'.format(today_to_card), format(
         stock_qty_today), format(deals_qty_today)
 
+
 df_deals = pd.read_csv('data/df_deals.csv')
+
+
 # callback Воронка продаж
 @app.callback([Output('funnel_graph', 'figure'),
                Output('card_deals_tab_deals_today_value', 'children'),
@@ -408,17 +349,15 @@ df_deals = pd.read_csv('data/df_deals.csv')
                # Input('deal_stage_selector_checklist', 'value'),
                ])
 def deals_tab(selected_maker, selected_product_groups):
-
-    df_deals_filtered_by_inputs = df_deals[
+    df_deals_filtered_by_inputs = df_deals.loc[
         df_deals['product_group_code'].isin(selected_product_groups) &
         df_deals['manufacturer'].isin(selected_maker) |
         df_deals['deal_status'].isin(['empty'])
         ]
-    df_deals_filtered_by_inputs = df_deals_filtered_by_inputs[
-        ['date', 'milestone_event', 'deal_stage_code', 'deal_stage_name', 'qty']]
+
     today = datetime.datetime.now()
     today_str = today.strftime("%Y-%m-%d")
-    today_funnel_df = df_deals_filtered_by_inputs[df_deals_filtered_by_inputs['date'] == today_str]
+    today_funnel_df = df_deals_filtered_by_inputs.loc[df_deals_filtered_by_inputs['date'] == today_str]
     df_deals_groupped = today_funnel_df.groupby('deal_stage_name', as_index=False)["qty"].sum()
 
     ##### Готовим списки X и Y для построения графика
@@ -443,33 +382,33 @@ def deals_tab(selected_maker, selected_product_groups):
         x_graph.append([val][0])
 
     # deals_qty_today - для карточки Количество товаров в сделках на сегодняшний день
-    deals_qty_today = df_deals_groupped['qty'].sum()
+    deals_qty_today = df_deals_groupped.loc[:, 'qty'].sum()
 
     # считаем сколько машин мы продали
-    deal_won = df_deals_filtered_by_inputs[df_deals_filtered_by_inputs['milestone_event'] == 'deal_won']
+    deal_won = df_deals_filtered_by_inputs.loc[df_deals_filtered_by_inputs['milestone_event'] == 'deal_won']
     # переводим поле "Дата" в формат времени
-    deal_won['date'] = pd.to_datetime(deal_won['date'], infer_datetime_format=True)
+    deal_won.loc[:, 'date'] = pd.to_datetime(deal_won['date'], infer_datetime_format=True)
     # начало года - формат времени
     start_date_deal_won = datetime.datetime.strptime("01.01.2021", "%d.%m.%Y")
     end_date_deal_won = datetime.datetime.now()
-    after_start_date_won = deal_won["date"] >= start_date_deal_won
-    before_end_date_won = deal_won["date"] <= end_date_deal_won
+    after_start_date_won = deal_won.loc[:, "date"] >= start_date_deal_won
+    before_end_date_won = deal_won.loc[:, "date"] <= end_date_deal_won
     between_two_dates = after_start_date_won & before_end_date_won
     deal_won_groupped_2021 = deal_won.loc[between_two_dates]
-    won_qty_2021 = deal_won_groupped_2021['qty'].sum()
+    won_qty_2021 = deal_won_groupped_2021.loc[:, 'qty'].sum()
 
     # считаем сколько машин мы проиграли
-    deal_lost = df_deals_filtered_by_inputs[df_deals_filtered_by_inputs['milestone_event'] == 'deal_lost']
+    deal_lost = df_deals_filtered_by_inputs.loc[df_deals_filtered_by_inputs['milestone_event'] == 'deal_lost']
     # переводим поле "Дата" в формат времени
-    deal_lost['date'] = pd.to_datetime(deal_lost['date'], infer_datetime_format=True)
+    deal_lost.loc[:, 'date'] = pd.to_datetime(deal_lost['date'], infer_datetime_format=True)
     # начало года - формат времени
     start_date_deal_lost = datetime.datetime.strptime("01.01.2021", "%d.%m.%Y")
     end_date_deal_lost = datetime.datetime.now()
-    after_start_date_lost = deal_lost["date"] >= start_date_deal_lost
-    before_end_date_lost = deal_lost["date"] <= end_date_deal_lost
+    after_start_date_lost = deal_lost.loc[:, "date"] >= start_date_deal_lost
+    before_end_date_lost = deal_lost.loc[:, "date"] <= end_date_deal_lost
     between_two_dates = after_start_date_lost & before_end_date_lost
     deal_lost_groupped_2021 = deal_lost.loc[between_two_dates]
-    lost_qty_2021 = deal_lost_groupped_2021['qty'].sum()
+    lost_qty_2021 = deal_lost_groupped_2021.loc[:, 'qty'].sum()
 
     trace = go.Funnel(
         # y=["Website visit", "Downloads", "Potential customers", "Requested price", "Finalized"],
@@ -490,9 +429,8 @@ def deals_tab(selected_maker, selected_product_groups):
         lost_qty_2021), '* По состоянию на {}'.format(today_to_card)
 
 
-
 df_won_fact = df_deals.loc[df_deals['milestone_event'] == 'deal_won']
-#df_won_fact.to_csv('data/temp_won_fact.csv')
+
 
 # обработчик чек-боксов Производитель во вкладке План-факт
 @app.callback(
@@ -511,6 +449,7 @@ def button_callback_func(select_all_makers_button, release_all_makers_button, op
         selected_values = []
         return selected_values
     return full_list
+
 
 @app.callback(
     Output("product_group_selector_checklist_tab_plan_fact", "value"),
@@ -533,7 +472,7 @@ def button_productgroup_callback_func(select_all_product_groups_button, release_
 # Обработчик Вкладка План факт
 @app.callback(Output('contracts_plan_fact_graph', 'figure'),
               Output('card_plan_fact_tab_contract_value', 'children'),
-               Output('card_plan_fact_today_date', 'children'),
+              Output('card_plan_fact_today_date', 'children'),
               [Input('maker_selector_plan_fact', 'value'),
                Input('product_group_selector_checklist_tab_plan_fact', 'value'),
                # Input('deal_stage_selector_checklist', 'value'),
@@ -543,20 +482,19 @@ def deals_tab(selected_maker, selected_product_groups):
         df_won_fact['product_group_code'].isin(selected_product_groups) &
         df_won_fact['manufacturer'].isin(selected_maker)
         ]
-    df_plan_fact_filtered_by_inputs['date'] = pd.to_datetime(df_won_fact['date'], infer_datetime_format=True)
-
+    df_plan_fact_filtered_by_inputs.loc[:, 'date'] = pd.to_datetime(df_won_fact['date'], infer_datetime_format=True)
 
     start_date_plan_fact = datetime.datetime.strptime("01.01.2021", "%d.%m.%Y")
     end_date_plan_fact = datetime.datetime.now()
-    after_start_date_plan_fact = df_plan_fact_filtered_by_inputs["date"] >= start_date_plan_fact
-    before_end_date_plan_fact = df_plan_fact_filtered_by_inputs["date"] <= end_date_plan_fact
+    after_start_date_plan_fact = df_plan_fact_filtered_by_inputs.loc[:, "date"] >= start_date_plan_fact
+    before_end_date_plan_fact = df_plan_fact_filtered_by_inputs.loc[:, "date"] <= end_date_plan_fact
     between_two_dates = after_start_date_plan_fact & before_end_date_plan_fact
     df_won_fact_groupped_2021 = df_plan_fact_filtered_by_inputs.loc[between_two_dates]
 
-    df_won_fact_groupped_2021['cumsum'] = df_won_fact_groupped_2021['qty'].cumsum()
+    df_won_fact_groupped_2021.loc[:, 'cumsum'] = df_won_fact_groupped_2021['qty'].cumsum()
 
-    x = df_won_fact_groupped_2021['date']
-    y = df_won_fact_groupped_2021['cumsum']
+    x = df_won_fact_groupped_2021.loc[:, 'date']
+    y = df_won_fact_groupped_2021.loc[:, 'cumsum']
     fact_at_current_date = df_won_fact_groupped_2021.iloc[-1]['cumsum']
     fig = go.Figure()
     fig.add_trace(go.Scatter(
@@ -576,5 +514,6 @@ def deals_tab(selected_maker, selected_product_groups):
     today_to_card = today_to_card.strftime("%d.%m.%Y")
     return fig, value_to_fact_qty, '* По состоянию на {}'.format(today_to_card)
 
+
 if __name__ == "__main__":
-    app.run_server(debug = True)
+    app.run_server(debug=True)

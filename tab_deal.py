@@ -1,29 +1,30 @@
 from dash import dcc, html
 import dash_bootstrap_components as dbc
+import initial_values
 
-makers = [{'label': " John Deere", 'value': "John Deere"},
-          {'label': " JCB", 'value': "JCB"},
-          {'label': " Kuhn", 'value': "KUHN"}, ]
+makers = initial_values.makers
+makers_list = initial_values.makers_list
+product_groups = initial_values.product_groups
+product_groups_list = initial_values.product_groups_list
+deal_stages = initial_values.deal_stages
 
-makers_list = ["John Deere", "JCB", "KUHN"]
+card_tab_deals_qty_in_deals = [
+    dbc.CardHeader("Товары в сделках, ед *"),
+    dbc.CardBody([html.P(className="card-title", id='card_deals_tab_deals_today_value'),
+                  ]
+                 ), ]
 
-product_groups = [{'label': " Тракторы", 'value': "TR"},
-                  {'label': " З/У комбайны", 'value': "HARV"},
-                  {'label': " Прицепное оборудование", 'value': "TL"},
-                  {'label': " Опрыскиватели", 'value': "SPR"},
-                  {'label': " Погрузчики", 'value': "LDR"}, ]
+card_tab_deals_won_deals = [
+    dbc.CardHeader("Продано в 2021г., ед *"),
+    dbc.CardBody([html.P(className="card-title", id='card_deals_tab_deals_won_in_2021'),
+                  ]
+                 ), ]
 
-product_groups_list = ["TR", "HARV", "TL", "SPR", "LDR"]
-
-deal_stages = [
-    {'label': ' 1. Выявление потребности', 'value': 'phase_1'},
-    {'label': ' 2. Презентационная работа', 'value': 'phase_2'},
-    {'label': ' 3. Переговоры', 'value': 'phase_3'},
-    {'label': ' 4. Заключение договора', 'value': 'phase_4'},
-    {'label': ' 5. Отгрузка и закрытие сделки', 'value': 'phase_5'}, ]
-
-deal_stages_list = ['phase_1', 'phase_2', 'phase_3', 'phase_4', 'phase_5']
-
+card_tab_deals_lost_deals = [
+    dbc.CardHeader("Проиграно, ед *"),
+    dbc.CardBody([html.P(className="card-title", id='card_deals_tab_deals_lost_in_2021'),
+                  ]
+                 ), ]
 
 def deal_tab():
     card_tab_deals_qty_in_deals = [

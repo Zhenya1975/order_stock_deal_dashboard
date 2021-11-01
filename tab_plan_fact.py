@@ -1,19 +1,12 @@
 from dash import dcc, html
 import dash_bootstrap_components as dbc
+import initial_values
 
-makers = [{'label': " John Deere", 'value': "John Deere"},
-          {'label': " JCB", 'value': "JCB"},
-          {'label': " Kuhn", 'value': "KUHN"}, ]
-
-makers_list = ["John Deere", "JCB", "KUHN"]
-
-product_groups = [{'label': " Тракторы", 'value': "TR"},
-                  {'label': " З/У комбайны", 'value': "HARV"},
-                  {'label': " Прицепное оборудование", 'value': "TL"},
-                  {'label': " Опрыскиватели", 'value': "SPR"},
-                  {'label': " Погрузчики", 'value': "LDR"}, ]
-
-product_groups_list = ["TR", "HARV", "TL", "SPR", "LDR"]
+makers = initial_values.makers
+makers_list = initial_values.makers_list
+product_groups = initial_values.product_groups
+product_groups_list = initial_values.product_groups_list
+deal_stages = initial_values.deal_stages
 
 def plan_fact_tab():
     card_tab_deals_qty_in_deals = [
