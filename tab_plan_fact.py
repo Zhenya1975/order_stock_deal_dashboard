@@ -109,7 +109,7 @@ def plan_fact_tab():
                                              #dbc.Col(dbc.Card(card_tab_deals_lost_deals, color="dark", inverse=True)),
                                          ],
                                          ),
-                                         #html.P(className="card-text", id='card_plan_fact_today_date'),
+                                         html.P(className="card-text", id='card_plan_fact_today_date'),
 
                                          html.P(),
                                          dcc.Graph(id='contracts_plan_fact_graph', config={'displayModeBar': False}),

@@ -216,7 +216,6 @@ def button_callback_func(select_all_makers_button, release_all_makers_button, op
 orders_delivery_df = pd.read_csv('data/orders_delivery_df.csv')
 dealer_stockin_stockout_df = pd.read_csv('data/dealer_stockin_stockout.csv')
 
-
 @app.callback([Output('orders_stock_deals', 'figure'),
                Output('card_orders_today_value', 'children'),
                Output('card_orders_today_date', 'children'),
@@ -533,6 +532,8 @@ def button_productgroup_callback_func(select_all_product_groups_button, release_
 
 # Обработчик Вкладка План факт
 @app.callback(Output('contracts_plan_fact_graph', 'figure'),
+              Output('card_plan_fact_tab_contract_value', 'children'),
+               Output('card_plan_fact_today_date', 'children'),
               [Input('maker_selector_plan_fact', 'value'),
                Input('product_group_selector_checklist_tab_plan_fact', 'value'),
                # Input('deal_stage_selector_checklist', 'value'),
@@ -553,8 +554,10 @@ def deals_tab(selected_maker, selected_product_groups):
     df_won_fact_groupped_2021 = df_plan_fact_filtered_by_inputs.loc[between_two_dates]
 
     df_won_fact_groupped_2021['cumsum'] = df_won_fact_groupped_2021['qty'].cumsum()
+
     x = df_won_fact_groupped_2021['date']
     y = df_won_fact_groupped_2021['cumsum']
+    fact_at_current_date = df_won_fact_groupped_2021.iloc[-1]['cumsum']
     fig = go.Figure()
     fig.add_trace(go.Scatter(
         x=x,
@@ -564,17 +567,14 @@ def deals_tab(selected_maker, selected_product_groups):
     ))
     fig.update_layout(template='plotly_dark',
                       xaxis={'range': ['2021-01-01', '2022-01-01']},
-                      #yaxis_range=[0, int(order_plan_2021 * 1.5)],
-                      # yaxis_range=[0, 2000],
                       yaxis_title="Закзаанное кол-во, ед",
                       xaxis_title='Дата заказа',
                       # legend_title="Legend Title",
                       title={'text': 'План-факт контрактаций 2021 году', 'font': {'color': 'white'}, 'x': 0.5}, )
-
-    return fig
-
-
-
+    value_to_fact_qty = fact_at_current_date
+    today_to_card = datetime.datetime.now()
+    today_to_card = today_to_card.strftime("%d.%m.%Y")
+    return fig, value_to_fact_qty, '* По состоянию на {}'.format(today_to_card)
 
 if __name__ == "__main__":
-    app.run_server(debug=True)
+    app.run_server(debug = True)
