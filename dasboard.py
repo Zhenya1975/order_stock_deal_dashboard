@@ -1,11 +1,11 @@
 import datetime
 import dash_bootstrap_components as dbc
-from dash import dcc, html, callback_context
+from dash import dcc, html, callback_context, Input, Output, State
 import dash
 import pandas as pd
 # import numpy as np
 # import plotly.express as px
-from dash.dependencies import Input, Output, State
+#from dash.dependencies import Input, Output, State
 import plotly.graph_objects as go
 # import csv
 # import os
@@ -26,41 +26,29 @@ deal_stages = initial_values.deal_stages
 
 body = html.Div([
     dbc.Container(
-        [
-
-            # Заголовок Дашшборда
-            html.Div(style={'paddingLeft': '15px', 'paddingRight': '20px', 'paddingTop': '5px', 'paddingBottom': '5px',
+        [html.Div(style={'paddingLeft': '15px', 'paddingRight': '20px', 'paddingTop': '5px', 'paddingBottom': '5px',
                             'color': 'white'},
-                     children=[
-                         dbc.Row([
-                             dbc.Col(width=3,
-                                     children=[html.Img(src="static/logo RB.png", width=300), ]
-                                     ),
-                             dbc.Col(width=9,
-                                     children=[html.H3('БИЗНЕС АНАЛИТИКА'), ]
-
-                                     ),
+                  children=[
+                      dbc.Row([
+                          dbc.Col(width=3, children=[html.Img(src="static/logo RB.png", width=300),]),
+                          dbc.Col(width=9, children=[html.H3('БИЗНЕС АНАЛИТИКА'),]),
                          ]),
-
                          html.P(),
-                         html.P('Бизнес показатели отдела продаж техники'),
-                     ]
-                     ),
-            html.Div([
-                dcc.Tabs(
-                    id="tabs-with-classes",
-                    value='tab-deals',
-                    parent_className='custom-tabs',
-                    className='custom-tabs-container',
-                    children=[
-                        tab_deal.deal_tab(),
-                        tab_order.order_tab(),
-                        tab_plan_fact.plan_fact_tab(),
-                    ]),
-
-            ]),
-
-        ], fluid=True, className='custom_container')
+                         html.P('Бизнес-показатели отдела продаж техники'),
+                     ]),
+         html.Div([
+             dcc.Tabs(
+                 id="tabs-with-classes",
+                 value='tab-deals',
+                 parent_className='custom-tabs',
+                 className='custom-tabs-container',
+                 children=[
+                     tab_deal.deal_tab(),
+                     tab_order.order_tab(),
+                     tab_plan_fact.plan_fact_tab(),
+                 ]),
+         ]),
+         ], fluid=True, className='custom_container')
 ], style={"height": "100vh"}, )
 
 # передаем разметку страницы в приложение

@@ -6,6 +6,7 @@ makers_list = initial_values.makers_list
 product_groups = initial_values.product_groups
 product_groups_list = initial_values.product_groups_list
 deal_stages = initial_values.deal_stages
+deal_stages_list = initial_values.deal_stages_list
 
 card_orders_ = [
     dbc.CardHeader("В заказах, ед *"),
