@@ -11,6 +11,7 @@ import plotly.graph_objects as go
 # import os
 import tab_deal
 import tab_order
+import tab_plan_fact
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 app.title = "Demo dashboard"
@@ -74,6 +75,8 @@ card_tab_deals_lost_deals = [
                   ]
                  ), ]
 
+
+
 body = html.Div([
     dbc.Container(
         [
@@ -82,8 +85,20 @@ body = html.Div([
             html.Div(style={'paddingLeft': '15px', 'paddingRight': '20px', 'paddingTop': '5px', 'paddingBottom': '5px',
                             'color': 'white'},
                      children=[
+                         dbc.Row([
+                             dbc.Col(width=3,
+                                     children=[html.Img(src="static/logo RB.png", width=300),]
+                                     ),
+                             dbc.Col(width=9,
+                                 children=[html.H3('MANAGEMENT DASHBOARD'),]
+
+                             ),
+                         ]),
+
                          html.P(),
-                         html.H3('ПОКАЗАТЕЛИ ОТДЕЛА ПРОДАЖ ТЕХНИКИ'),
+
+
+
                          # html.P('Основные показатели отдела продаж техники'),
                      ]
                      ),
@@ -96,7 +111,7 @@ body = html.Div([
                     children=[
                         tab_deal.deal_tab(),
                         tab_order.order_tab(),
-                        #tab_deal.deal_tab(),
+                        tab_plan_fact.plan_fact_tab(),
                     ]),
 
             ]),
@@ -381,9 +396,9 @@ def orders_stock(selected_maker, selected_product_groups, selected_deal_stages):
     return fig, '{}'.format(orders_qty_today), '* По состоянию на {}'.format(today_to_card), format(
         stock_qty_today), format(deals_qty_today)
 
-
+df_deals = pd.read_csv('data/df_deals.csv')
 # callback Воронка продаж
-@app.callback([Output('funnel_graph', 'figure'),  #
+@app.callback([Output('funnel_graph', 'figure'),
                Output('card_deals_tab_deals_today_value', 'children'),
                Output('card_deals_tab_deals_won_in_2021', 'children'),
                Output('card_deals_tab_deals_lost_in_2021', 'children'),
@@ -394,7 +409,7 @@ def orders_stock(selected_maker, selected_product_groups, selected_deal_stages):
                # Input('deal_stage_selector_checklist', 'value'),
                ])
 def deals_tab(selected_maker, selected_product_groups):
-    df_deals = pd.read_csv('data/df_deals.csv')
+
     df_deals_filtered_by_inputs = df_deals[
         df_deals['product_group_code'].isin(selected_product_groups) &
         df_deals['manufacturer'].isin(selected_maker) |
@@ -474,6 +489,91 @@ def deals_tab(selected_maker, selected_product_groups):
     layout = {'template': 'plotly_dark', 'title': {'text': 'Товары в сделках по этапам, ед'}}
     return go.Figure(data=trace, layout=layout), '{}'.format(deals_qty_today), '{}'.format(won_qty_2021), '{}'.format(
         lost_qty_2021), '* По состоянию на {}'.format(today_to_card)
+
+
+
+df_won_fact = df_deals.loc[df_deals['milestone_event'] == 'deal_won']
+#df_won_fact.to_csv('data/temp_won_fact.csv')
+
+# обработчик чек-боксов Производитель во вкладке План-факт
+@app.callback(
+    Output("maker_selector_plan_fact", "value"),
+    [Input('select_all_makers_button_tab_plan_fact', 'n_clicks'),
+     Input('release_all_makers_button_plan_fact', 'n_clicks')],
+    [State("maker_selector_plan_fact", "options")],
+)
+def button_callback_func(select_all_makers_button, release_all_makers_button, options):
+    changed_id = [p['prop_id'] for p in callback_context.triggered][0]
+    full_list = [option["value"] for option in options]
+    if 'select_all_makers_button_tab_plan_fact' in changed_id:
+        selected_values = [option["value"] for option in options]
+        return selected_values
+    elif 'release_all_makers_button_plan_fact' in changed_id:
+        selected_values = []
+        return selected_values
+    return full_list
+
+@app.callback(
+    Output("product_group_selector_checklist_tab_plan_fact", "value"),
+    [Input('select_all_product_groups_button_tab_plan_fact', 'n_clicks'),
+     Input('release_all_product_groups_button_tab_plan_fact', 'n_clicks')],
+    [State("product_group_selector_checklist_tab_plan_fact", "options")],
+)
+def button_productgroup_callback_func(select_all_product_groups_button, release_all_product_groups_button, options):
+    changed_id = [p['prop_id'] for p in callback_context.triggered][0]
+    full_list = [option["value"] for option in options]
+    if 'select_all_product_groups_button_tab_plan_fact' in changed_id:
+        selected_values = [option["value"] for option in options]
+        return selected_values
+    elif 'release_all_product_groups_button_tab_plan_fact' in changed_id:
+        selected_values = []
+        return selected_values
+    return full_list
+
+
+# Обработчик Вкладка План факт
+@app.callback(Output('contracts_plan_fact_graph', 'figure'),
+              [Input('maker_selector_plan_fact', 'value'),
+               Input('product_group_selector_checklist_tab_plan_fact', 'value'),
+               # Input('deal_stage_selector_checklist', 'value'),
+               ])
+def deals_tab(selected_maker, selected_product_groups):
+    df_plan_fact_filtered_by_inputs = df_won_fact.loc[
+        df_won_fact['product_group_code'].isin(selected_product_groups) &
+        df_won_fact['manufacturer'].isin(selected_maker)
+        ]
+    df_plan_fact_filtered_by_inputs['date'] = pd.to_datetime(df_won_fact['date'], infer_datetime_format=True)
+
+
+    start_date_plan_fact = datetime.datetime.strptime("01.01.2021", "%d.%m.%Y")
+    end_date_plan_fact = datetime.datetime.now()
+    after_start_date_plan_fact = df_plan_fact_filtered_by_inputs["date"] >= start_date_plan_fact
+    before_end_date_plan_fact = df_plan_fact_filtered_by_inputs["date"] <= end_date_plan_fact
+    between_two_dates = after_start_date_plan_fact & before_end_date_plan_fact
+    df_won_fact_groupped_2021 = df_plan_fact_filtered_by_inputs.loc[between_two_dates]
+
+    df_won_fact_groupped_2021['cumsum'] = df_won_fact_groupped_2021['qty'].cumsum()
+    x = df_won_fact_groupped_2021['date']
+    y = df_won_fact_groupped_2021['cumsum']
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=x,
+        y=y,
+        fill='tozeroy',
+        name='Факт продаж, ед',
+    ))
+    fig.update_layout(template='plotly_dark',
+                      xaxis={'range': ['2021-01-01', '2022-01-01']},
+                      #yaxis_range=[0, int(order_plan_2021 * 1.5)],
+                      # yaxis_range=[0, 2000],
+                      yaxis_title="Закзаанное кол-во, ед",
+                      xaxis_title='Дата заказа',
+                      # legend_title="Legend Title",
+                      title={'text': 'План-факт контрактаций 2021 году', 'font': {'color': 'white'}, 'x': 0.5}, )
+
+    return fig
+
+
 
 
 if __name__ == "__main__":

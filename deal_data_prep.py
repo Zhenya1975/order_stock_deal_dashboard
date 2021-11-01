@@ -95,8 +95,9 @@ for index, row_calendar in df_calendar_deals.iterrows():
     # days=deal_days_life-1 - это просто особенность расчета интеервалов в питоне. Взяли поправку на это
     deal_finish_date = deal_start_date.date() + datetime.timedelta(days=deal_days_life-1)
     # проверка следующая. Если номер этапа меньше 5, то считаем сделку проигранной.
-
+    deal_finish_quarter = (deal_finish_date.month-1)//3 + 1
     dict_temp['date'] = deal_finish_date
+    dict_temp['deal_finish_quarter'] = deal_finish_quarter
     dict_temp['deal_id'] = deal_id
     dict_temp['deal_status'] = 'active'
     dict_temp['qty'] = deal_qty
@@ -120,4 +121,5 @@ df_active_records = df_deals[df_deals['deal_status']=='active']
 
 df_deals_last_day_of_each_deal = df_active_records.groupby(['deal_id', 'deal_stage_number'])['date'].max()
 #print(df_deals_last_day_of_each_deal)
+
 df_deals.to_csv('data/df_deals.csv')
