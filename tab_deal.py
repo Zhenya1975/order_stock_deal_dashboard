@@ -38,7 +38,7 @@ def deal_tab():
                      ), ]
 
     card_tab_deals_lost_deals = [
-        dbc.CardHeader("Проиграно d 2021г., ед *"),
+        dbc.CardHeader("Проиграно в 2021г., ед *"),
         dbc.CardBody([html.P(className="card-title", id='card_deals_tab_deals_lost_in_2021'),
                       ]
                      ), ]

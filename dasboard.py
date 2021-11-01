@@ -95,7 +95,6 @@ body = html.Div([
                     className='custom-tabs-container',
                     children=[
                         tab_deal.deal_tab(),
-
                         tab_order.order_tab(),
                         #tab_deal.deal_tab(),
                     ]),
