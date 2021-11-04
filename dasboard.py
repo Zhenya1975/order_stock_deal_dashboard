@@ -496,22 +496,22 @@ def deals_tab(selected_maker, selected_product_groups,contents, filename):
     # создаем линию плана по умолчанию
     plan_df = plan_prep.plan_prep()
 
-
-    # if contents is not None:
-    #     content_type, content_string = contents.split(',')
-    #     decoded = base64.b64decode(content_string)
-    #     try:
-    #         if 'xlsx' in filename:
-    #             # если к нам загружен эксель, то делаем из него датафрейм plan_df
-    #             plan_df = pd.read_excel(io.BytesIO(decoded))
-    #             # здесь надо сделать проверку загруженных данных
-    #             output_table = dbc.Table().from_dataframe(plan_df, style={'color': 'white'})
-    #         else:
-    #
-    #             table_plan_output = html.Div(['Что-то не так с загруженным файлом'])
-    #     except Exception as e:
-    #         print(e)
-    #         table_plan_output = html.Div(['Что-то не так с загруженным файлом'])
+    # если с кнопки Загрузить что-то к нам заехало, то:
+    if contents is not None:
+        # парсим то, что мы получили
+        content_type, content_string = contents.split(',')
+        decoded = base64.b64decode(content_string)
+        # делаем попытку прочитать эксель
+        try:
+            if 'xlsx' in filename:
+                # если к нам загружен эксель, то делаем из него датафрейм plan_df
+                plan_df = pd.read_excel(io.BytesIO(decoded))
+                # здесь надо сделать проверку загруженных из эксель данных
+                print('эксель успешно загружен')
+                # если файл не ексель, то пока просто ничего не делаем
+        # если попытка загрузить не прошла по каким-то причинам, то пока ничего не далем. Выводим в принт
+        except Exception as e:
+            print('при попытке загрузить excal файл возникло исключение', e)
 
 
 
@@ -556,25 +556,6 @@ def deals_tab(selected_maker, selected_product_groups,contents, filename):
 
     return fig, value_to_fact_qty, current_date_output, table_plan_output
 
-# обработчик кнопки загрузки файла.
-# @app.callback(Output("output-data-upload", "children"),
-#               Input('upload_plan', 'contents'),
-#               State('upload_plan', 'filename'))
-#
-# def make_table(contents, filename):
-#     if contents is not None:
-#         content_type, content_string = contents.split(',')
-#         decoded = base64.b64decode(content_string)
-#         try:
-#             if 'xlsx' in filename:
-#                 df = pd.read_excel(io.BytesIO(decoded))
-#                 output_table = dbc.Table().from_dataframe(df, style={ 'color': 'white'})
-#                 table_plan_output = html.Div([output_table])
-#                 return html.Div([output_table])
-#         except Exception as e:
-#             print(e)
-#             table_plan_output = html.Div(['Что-то не так с загруженным файлом'])
-#             return table_plan_output
 
 # обработчик кнопки выгрузки наружу файла "plan_template.xlsx"
 @app.callback(
