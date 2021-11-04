@@ -3,8 +3,7 @@ import random
 # import os
 import datetime
 import secrets
-# погнали делать график сделок
-# это вообще просто. Бежим по календарю Для каждой даты случайным образом определяем количество товаров в сделках. и это все.
+import plan_prep
 
 df_calendar = pd.read_csv('data/calendar.csv')
 df_calendar['date'] = pd.to_datetime(df_calendar['date'], infer_datetime_format=True)
@@ -122,4 +121,5 @@ df_active_records = df_deals[df_deals['deal_status']=='active']
 df_deals_last_day_of_each_deal = df_active_records.groupby(['deal_id', 'deal_stage_number'])['date'].max()
 #print(df_deals_last_day_of_each_deal)
 
-df_deals.to_csv('data/df_deals.csv')
+df_deals.to_csv('data/df_deals.csv', index = False)
+plan_prep.plan_prep()

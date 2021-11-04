@@ -13,6 +13,9 @@ import tab_deal
 import tab_order
 import tab_plan_fact
 import initial_values
+import plan_prep
+import base64
+import io
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 app.title = "Demo dashboard"
@@ -457,15 +460,16 @@ def button_productgroup_callback_func(select_all_product_groups_button, release_
     return full_list
 
 
-# Обработчик Вкладка План факт
+# Обработчик Вкладки План факт
 @app.callback(Output('contracts_plan_fact_graph', 'figure'),
               Output('card_plan_fact_tab_contract_value', 'children'),
               Output('card_plan_fact_today_date', 'children'),
+              Output("output-data-table", "children"),
               [Input('maker_selector_plan_fact', 'value'),
                Input('product_group_selector_checklist_tab_plan_fact', 'value'),
-               # Input('deal_stage_selector_checklist', 'value'),
-               ])
-def deals_tab(selected_maker, selected_product_groups):
+               Input('upload_plan', 'contents')],
+               [State('upload_plan', 'filename')])
+def deals_tab(selected_maker, selected_product_groups,contents, filename):
     df_plan_fact_filtered_by_inputs = df_won_fact.loc[
         df_won_fact['product_group_code'].isin(selected_product_groups) &
         df_won_fact['manufacturer'].isin(selected_maker)
@@ -484,6 +488,44 @@ def deals_tab(selected_maker, selected_product_groups):
     x = df_won_fact_groupped_2021.loc[:, 'date']
     y = df_won_fact_groupped_2021.loc[:, 'cumsum']
     fact_at_current_date = df_won_fact_groupped_2021.iloc[-1]['cumsum']
+
+    #table_plan_output = html.Div()
+    plan_value_for_selected_inputs = 0
+    annotation_text = ""
+
+    # создаем линию плана по умолчанию
+    plan_df = plan_prep.plan_prep()
+
+
+    # if contents is not None:
+    #     content_type, content_string = contents.split(',')
+    #     decoded = base64.b64decode(content_string)
+    #     try:
+    #         if 'xlsx' in filename:
+    #             # если к нам загружен эксель, то делаем из него датафрейм plan_df
+    #             plan_df = pd.read_excel(io.BytesIO(decoded))
+    #             # здесь надо сделать проверку загруженных данных
+    #             output_table = dbc.Table().from_dataframe(plan_df, style={'color': 'white'})
+    #         else:
+    #
+    #             table_plan_output = html.Div(['Что-то не так с загруженным файлом'])
+    #     except Exception as e:
+    #         print(e)
+    #         table_plan_output = html.Div(['Что-то не так с загруженным файлом'])
+
+
+
+    plan_df_filtered_by_inputs = plan_df.loc[plan_df['product_group_code'].isin(selected_product_groups) &
+                                                            plan_df['maker'].isin(selected_maker)
+                                                            ]
+    plan_df_filtered_by_inputs_value = plan_df_filtered_by_inputs['plan_qty'].sum()
+    annotation_text = "    План продаж: " + str(plan_df_filtered_by_inputs_value) + " ед."
+
+    # результирующую таблицу с планом мы получаем в html.Div(id='output-data-table') На него ссылается в колбэке, ожидая от него children, то есть html
+    output_table = dbc.Table().from_dataframe(plan_df_filtered_by_inputs, style={'color': 'white'})
+    # переменная table_plan_output нужна для того, чтобы передаеть ее в return
+    table_plan_output = html.Div([output_table])
+
     fig = go.Figure()
     fig.add_trace(go.Scatter(
         x=x,
@@ -491,16 +533,59 @@ def deals_tab(selected_maker, selected_product_groups):
         fill='tozeroy',
         name='Факт продаж, ед',
     ))
+
+    fig.add_hline(y=plan_df_filtered_by_inputs_value, line_width=3, line_color="red", annotation_text=annotation_text,
+                  annotation_position="top left",
+                  annotation_font_size=15,
+                  annotation_font_color="red"
+                  )
+
+
     fig.update_layout(template='plotly_dark',
                       xaxis={'range': ['2021-01-01', '2022-01-01']},
-                      yaxis_title="Закзаанное кол-во, ед",
-                      xaxis_title='Дата заказа',
+                      yaxis_title="Проданное кол-во, ед",
+                      xaxis_title='Дата продажи',
                       # legend_title="Legend Title",
-                      title={'text': 'План-факт контрактаций 2021 году', 'font': {'color': 'white'}, 'x': 0.5}, )
+                      title={'text': 'План-факт продаж в 2021 году', 'font': {'color': 'white'}, 'x': 0.5}, )
     value_to_fact_qty = fact_at_current_date
     today_to_card = datetime.datetime.now()
     today_to_card = today_to_card.strftime("%d.%m.%Y")
-    return fig, value_to_fact_qty, '* По состоянию на {}'.format(today_to_card)
+    current_date_output = '* По состоянию на {}'.format(today_to_card)
+
+
+
+    return fig, value_to_fact_qty, current_date_output, table_plan_output
+
+# обработчик кнопки загрузки файла.
+# @app.callback(Output("output-data-upload", "children"),
+#               Input('upload_plan', 'contents'),
+#               State('upload_plan', 'filename'))
+#
+# def make_table(contents, filename):
+#     if contents is not None:
+#         content_type, content_string = contents.split(',')
+#         decoded = base64.b64decode(content_string)
+#         try:
+#             if 'xlsx' in filename:
+#                 df = pd.read_excel(io.BytesIO(decoded))
+#                 output_table = dbc.Table().from_dataframe(df, style={ 'color': 'white'})
+#                 table_plan_output = html.Div([output_table])
+#                 return html.Div([output_table])
+#         except Exception as e:
+#             print(e)
+#             table_plan_output = html.Div(['Что-то не так с загруженным файлом'])
+#             return table_plan_output
+
+# обработчик кнопки выгрузки наружу файла "plan_template.xlsx"
+@app.callback(
+    Output("download-dataframe-xlsx", "data"),
+    Input("btn_xlsx", "n_clicks"),
+    prevent_initial_call=True,
+)
+def func(n_clicks):
+    if n_clicks:
+        df = plan_prep.plan_prep()
+        return dcc.send_data_frame(df.to_excel, "plan_template.xlsx",index=False, sheet_name="plan_template")
 
 
 if __name__ == "__main__":

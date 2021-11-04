@@ -1,6 +1,10 @@
-from dash import dcc, html
+from dash import dcc, html, Input, Output, State
 import dash_bootstrap_components as dbc
 import initial_values
+import base64
+import datetime
+import io
+import pandas as pd
 
 makers = initial_values.makers
 makers_list = initial_values.makers_list
@@ -14,17 +18,7 @@ def plan_fact_tab():
         dbc.CardBody([html.P(className="card-title", id='card_plan_fact_tab_contract_value'),
                       ]
                      ), ]
-    # card_tab_deals_won_deals = [
-    #     dbc.CardHeader("Продано в 2021г., ед *"),
-    #     dbc.CardBody([html.P(className="card-title", id='card_deals_tab_deals_won_in_2021'),
-    #                   ]
-    #                  ), ]
-    #
-    # card_tab_deals_lost_deals = [
-    #     dbc.CardHeader("Проиграно в 2021г., ед *"),
-    #     dbc.CardBody([html.P(className="card-title", id='card_deals_tab_deals_lost_in_2021'),
-    #                   ]
-    #                  ), ]
+
     plan_fact_tab_block = dcc.Tab(
         label='ПЛАН ФАКТ',
         value='tab_plan_fact',
@@ -86,6 +80,22 @@ def plan_fact_tab():
                                                        options=product_groups,
                                                        value=product_groups_list,
                                                        labelStyle=dict(display='block')),
+                                         html.Hr(className="hr"),
+                                         #dcc.Upload(html.Button('Upload File'), id="upload_plan"),
+                                         dcc.Upload(dbc.Button("Загрузить план", color="secondary",
+                                                    size="md",
+                                                    style={'marginBottom': '3px',
+                                                           'marginTop': '3px',
+                                                           'backgroundColor': '#232632'},
+                                                    ),
+                                                    id="upload_plan"
+                                                    ),
+                                         html.Div([
+                                             html.A("Выгрузить Excel шаблон", id="btn_xlsx"),
+                                             dcc.Download(id="download-dataframe-xlsx"),
+                                         ])
+
+
 
                                      ]
                                      ),
@@ -107,6 +117,13 @@ def plan_fact_tab():
                                          html.P(),
                                          dcc.Graph(id='contracts_plan_fact_graph', config={'displayModeBar': False}),
                                          html.P(),
+                                         html.Div(
+                                                  children=[
+                                                      html.P("План продаж"),
+                                                      html.Div(id='output-data-table')
+                                                  ]
+                                                  ),
+
 
                                      ]),
                         ])
@@ -114,4 +131,7 @@ def plan_fact_tab():
             ])
         ]
     )
+
+
+
     return plan_fact_tab_block
