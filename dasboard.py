@@ -42,13 +42,14 @@ body = html.Div([
          html.Div([
              dcc.Tabs(
                  id="tabs-with-classes",
-                 value='tab-deals',
+                 value='tab_plan_fact',
                  parent_className='custom-tabs',
                  className='custom-tabs-container',
                  children=[
+                     tab_plan_fact.plan_fact_tab(),
                      tab_deal.deal_tab(),
                      tab_order.order_tab(),
-                     tab_plan_fact.plan_fact_tab(),
+
                  ]),
          ]),
          ], fluid=True, className='custom_container')
@@ -537,7 +538,7 @@ def deals_tab(selected_maker, selected_product_groups,contents, filename):
     fig.add_hline(y=plan_df_filtered_by_inputs_value, line_width=3, line_color="red", annotation_text=annotation_text,
                   annotation_position="top left",
                   annotation_font_size=15,
-                  annotation_font_color="red"
+                  annotation_font_color="white"
                   )
 
 
