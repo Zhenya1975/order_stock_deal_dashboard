@@ -468,9 +468,10 @@ def button_productgroup_callback_func(select_all_product_groups_button, release_
               Output("output-data-table", "children"),
               [Input('maker_selector_plan_fact', 'value'),
                Input('product_group_selector_checklist_tab_plan_fact', 'value'),
+               Input('finish_date_slider', 'value'),
                Input('upload_plan', 'contents')],
                [State('upload_plan', 'filename')])
-def deals_tab(selected_maker, selected_product_groups,contents, filename):
+def deals_tab(selected_maker, selected_product_groups, finish_date_slider_value, contents, filename):
     df_plan_fact_filtered_by_inputs = df_won_fact.loc[
         df_won_fact['product_group_code'].isin(selected_product_groups) &
         df_won_fact['manufacturer'].isin(selected_maker)
@@ -478,7 +479,8 @@ def deals_tab(selected_maker, selected_product_groups,contents, filename):
     df_plan_fact_filtered_by_inputs.loc[:, 'date'] = pd.to_datetime(df_won_fact['date'], infer_datetime_format=True)
 
     start_date_plan_fact = datetime.datetime.strptime("01.01.2021", "%d.%m.%Y")
-    end_date_plan_fact = datetime.datetime.now()
+    #end_date_plan_fact = datetime.datetime.now()
+    end_date_plan_fact = datetime.datetime.fromtimestamp(finish_date_slider_value)
     after_start_date_plan_fact = df_plan_fact_filtered_by_inputs.loc[:, "date"] >= start_date_plan_fact
     before_end_date_plan_fact = df_plan_fact_filtered_by_inputs.loc[:, "date"] <= end_date_plan_fact
     between_two_dates = after_start_date_plan_fact & before_end_date_plan_fact
@@ -549,7 +551,9 @@ def deals_tab(selected_maker, selected_product_groups,contents, filename):
                       # legend_title="Legend Title",
                       title={'text': 'План-факт продаж в 2021 году', 'font': {'color': 'white'}, 'x': 0.5}, )
     value_to_fact_qty = fact_at_current_date
-    today_to_card = datetime.datetime.now()
+    #today_to_card = datetime.datetime.now()
+    today_to_card = end_date_plan_fact
+
     today_to_card = today_to_card.strftime("%d.%m.%Y")
     current_date_output = '* По состоянию на {}'.format(today_to_card)
 
