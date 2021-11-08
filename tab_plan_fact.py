@@ -14,8 +14,10 @@ deal_stages = initial_values.deal_stages
 
 def plan_fact_tab():
     card_tab_deals_qty_in_deals = [
-        dbc.CardHeader("Факт контрактаций в 2021, ед *"),
-        dbc.CardBody([html.P(className="card-title", id='card_plan_fact_tab_contract_value'),
+        dbc.CardHeader("Факт продаж в 2021, ед *"),
+        dbc.CardBody([
+            html.P(className="card-title", id='card_plan_fact_tab_contract_value'),
+            html.P(className="card-text", id='card_plan_fact_tab_plan_value'),
                       ]
                      ), ]
 
@@ -97,17 +99,17 @@ def plan_fact_tab():
                                              html.A("Выгрузить Excel шаблон", id="btn_xlsx"),
                                              dcc.Download(id="download-dataframe-xlsx"),
                                          ]),
-                                         html.Hr(className="hr"),
-                                         html.P(),
-                                         html.B('Ожидания'),
-                                         html.P(),
-                                         dcc.Checklist(id='expectations_deals',
-                                                       options=[{'label': " Текущие сделки", 'value': "expected_deals"},
-                                                                       #{'label': " Статистический тренд", 'value': "trend"},
-                                                                ],
-
-                                                       value=[],
-                                                       labelStyle=dict(display='block')),
+                                         # html.Hr(className="hr"),
+                                         # html.P(),
+                                         # html.B('Ожидания'),
+                                         # html.P(),
+                                         # dcc.Checklist(id='expectations_deals',
+                                         #               options=[{'label': " Текущие сделки", 'value': "expected_deals"},
+                                         #                               #{'label': " Статистический тренд", 'value': "trend"},
+                                         #                        ],
+                                         #
+                                         #               value=[],
+                                         #               labelStyle=dict(display='block')),
 
                                      ]
                                      ),

@@ -155,7 +155,6 @@ def button_callback_func(select_all_makers_button, release_all_makers_button, op
 orders_delivery_df = pd.read_csv('data/orders_delivery_df.csv')
 dealer_stockin_stockout_df = pd.read_csv('data/dealer_stockin_stockout.csv')
 
-
 @app.callback([Output('orders_stock_deals', 'figure'),
                Output('card_orders_today_value', 'children'),
                Output('card_orders_today_date', 'children'),
@@ -467,6 +466,7 @@ def button_productgroup_callback_func(select_all_product_groups_button, release_
 # Обработчик Вкладки План факт
 @app.callback(Output('contracts_plan_fact_graph', 'figure'),
               Output('card_plan_fact_tab_contract_value', 'children'),
+              Output('card_plan_fact_tab_plan_value', 'children'),
               Output('card_plan_fact_today_date', 'children'),
               Output("output-data-table", "children"),
               [Input('maker_selector_plan_fact', 'value'),
@@ -474,12 +474,13 @@ def button_productgroup_callback_func(select_all_product_groups_button, release_
                Input('finish_date_slider', 'value'),
                Input('upload_plan', 'contents')],
                [State('upload_plan', 'filename')])
-def deals_tab(selected_maker, selected_product_groups, finish_date_slider_value, contents, filename):
+def plan_fact_tab(selected_maker, selected_product_groups, finish_date_slider_value, contents, filename):
     df_plan_fact_filtered_by_inputs = df_won_fact.loc[
         df_won_fact['product_group_code'].isin(selected_product_groups) &
         df_won_fact['manufacturer'].isin(selected_maker)
         ]
     df_plan_fact_filtered_by_inputs.loc[:, 'date'] = pd.to_datetime(df_won_fact['date'], infer_datetime_format=True)
+
 
     start_date_plan_fact = datetime.datetime.strptime("01.01.2021", "%d.%m.%Y")
     #end_date_plan_fact = datetime.datetime.now()
@@ -496,10 +497,11 @@ def deals_tab(selected_maker, selected_product_groups, finish_date_slider_value,
     x = df_won_fact_groupped_2021.loc[:, 'date']
     y = df_won_fact_groupped_2021.loc[:, 'cumsum']
     fact_at_current_date = df_won_fact_groupped_2021.iloc[-1]['cumsum']
-
+    # сейчас у нас есть df_plan_fact_filtered_by_inputs  - передаем ее на построение выборки ожидания
+    expected_deals_df = functions_file.expected_deals(df_plan_fact_filtered_by_inputs, fact_at_current_date, end_date_plan_fact)
     #table_plan_output = html.Div()
-    plan_value_for_selected_inputs = 0
-    annotation_text = ""
+    #plan_value_for_selected_inputs = 0
+    #annotation_text = ""
 
     # создаем линию плана по умолчанию
     plan_df = plan_prep.plan_prep()
@@ -515,7 +517,7 @@ def deals_tab(selected_maker, selected_product_groups, finish_date_slider_value,
                 # если к нам загружен эксель, то делаем из него датафрейм plan_df
                 plan_df = pd.read_excel(io.BytesIO(decoded))
                 # здесь надо сделать проверку загруженных из эксель данных
-                print('эксель успешно загружен')
+                #print('эксель успешно загружен')
                 # если файл не ексель, то пока просто ничего не делаем
         # если попытка загрузить не прошла по каким-то причинам, то пока ничего не далем. Выводим в принт
         except Exception as e:
@@ -540,6 +542,12 @@ def deals_tab(selected_maker, selected_product_groups, finish_date_slider_value,
         y=y,
         fill='tozeroy',
         name='Факт продаж, ед',
+    ))
+
+    fig.add_trace(go.Scatter(
+        x = expected_deals_df['date'],
+        y = expected_deals_df['cumsum'],
+        name='Ожидания продаж, ед',
     ))
 
     fig.add_hline(y=plan_df_filtered_by_inputs_value, line_width=3, line_color="red", annotation_text=annotation_text,
@@ -592,9 +600,9 @@ def deals_tab(selected_maker, selected_product_groups, finish_date_slider_value,
     today_to_card = today_to_card.strftime("%d.%m.%Y")
     current_date_output = '* По состоянию на {}'.format(today_to_card)
 
+    plan_value = 'План: {}'.format(plan_df_filtered_by_inputs_value)
 
-
-    return fig, value_to_fact_qty, current_date_output, table_plan_output
+    return fig, value_to_fact_qty, plan_value, current_date_output, table_plan_output
 
 
 # обработчик кнопки выгрузки наружу файла "plan_template.xlsx"
