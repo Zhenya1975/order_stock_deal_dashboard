@@ -8,7 +8,7 @@ product_groups = [{'label': " Тракторы", 'value': "TR"},
                   {'label': " З/У комбайны", 'value': "HARV"},
                   {'label': " Прицепное оборудование", 'value': "TL"},
                   {'label': " Опрыскиватели", 'value': "SPR"},
-                  {'label': " Погрузчики", 'value': "LDR"}, ]
+                  {'label': " Погрузчики", 'value': "LDR"},]
 
 product_groups_list = ["TR", "HARV", "TL", "SPR", "LDR"]
 

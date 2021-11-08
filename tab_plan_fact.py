@@ -82,6 +82,9 @@ def plan_fact_tab():
                                                        labelStyle=dict(display='block')),
                                          html.Hr(className="hr"),
                                          #dcc.Upload(html.Button('Upload File'), id="upload_plan"),
+                                         html.P(),
+                                         html.B('План продаж'),
+                                         html.P(),
                                          dcc.Upload(dbc.Button("Загрузить план", color="secondary",
                                                     size="md",
                                                     style={'marginBottom': '3px',
@@ -93,9 +96,18 @@ def plan_fact_tab():
                                          html.Div([
                                              html.A("Выгрузить Excel шаблон", id="btn_xlsx"),
                                              dcc.Download(id="download-dataframe-xlsx"),
-                                         ])
+                                         ]),
+                                         html.Hr(className="hr"),
+                                         html.P(),
+                                         html.B('Ожидания'),
+                                         html.P(),
+                                         dcc.Checklist(id='expectations_deals',
+                                                       options=[{'label': " Текущие сделки", 'value': "expected_deals"},
+                                                                       #{'label': " Статистический тренд", 'value': "trend"},
+                                                                ],
 
-
+                                                       value=[],
+                                                       labelStyle=dict(display='block')),
 
                                      ]
                                      ),

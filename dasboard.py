@@ -14,8 +14,11 @@ import tab_order
 import tab_plan_fact
 import initial_values
 import plan_prep
+import functions_file
 import base64
 import io
+from sklearn.model_selection import train_test_split
+from sklearn import linear_model
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 app.title = "Demo dashboard"
@@ -487,6 +490,8 @@ def deals_tab(selected_maker, selected_product_groups, finish_date_slider_value,
     df_won_fact_groupped_2021 = df_plan_fact_filtered_by_inputs.loc[between_two_dates]
 
     df_won_fact_groupped_2021.loc[:, 'cumsum'] = df_won_fact_groupped_2021['qty'].cumsum()
+    # первый день выборки ожиданий - это end_date_plan_fact
+    # последний день выборки ожиданий - конец периода графика.
 
     x = df_won_fact_groupped_2021.loc[:, 'date']
     y = df_won_fact_groupped_2021.loc[:, 'cumsum']
@@ -543,9 +548,39 @@ def deals_tab(selected_maker, selected_product_groups, finish_date_slider_value,
                   annotation_font_color="white"
                   )
 
+    # model = linear_model.LinearRegression()
+    # #x = df_won_fact_groupped_2021.loc[:, 'date']
+    # #X = df_won_fact_groupped_2021.loc[:, 'cumsum']
+    # df_won_fact_groupped_2021.loc[:, 'date_timestamp'] = df_won_fact_groupped_2021[['date']].apply(lambda x: x[0].timestamp(), axis=1).astype(int)
+    # #print(df_won_fact_groupped_2021)
+    # X = df_won_fact_groupped_2021['date_timestamp'].values[:, None]
+    # #print('X: ', X)
+    # X_train, X_test, y_train, y_test = train_test_split(X, df_won_fact_groupped_2021['cumsum'], test_size=0.33, random_state=42)
+    # #print('X_train: ', X_train)
+    # #print('X_test: ', X_test)
+    # model.fit(X_train, y_train)
+    # x_range = X_test
+    # #print('x_range type: ', type(x_range))
+    #
+    # y_range = model.predict(x_range.reshape(-1, 1))
+    # #print('y_range type: ', type(y_range))
+    # df_predict = pd.DataFrame(x_range, columns=['date']).sort_values('date').reset_index()
+    # df_predict['value'] = y_range
+    # df_predict.loc[:, 'date_d'] = pd.to_datetime(df_predict['date'], unit='s', infer_datetime_format=True)
+    # x_predict = df_predict['date_d']
+    # y_predict = df_predict['value']
+    # print(df_predict)
+
+    # fig.add_trace(go.Scatter(
+    #     x=x_predict,
+    #     y=y_predict,
+    #     fill='tozeroy',
+    #     name='predict',
+    # ))
+
 
     fig.update_layout(template='plotly_dark',
-                      xaxis={'range': ['2021-01-01', '2022-01-01']},
+                      xaxis={'range': [functions_file.plan_fact_graph_date_range()[0], functions_file.plan_fact_graph_date_range()[1]]},
                       yaxis_title="Проданное кол-во, ед",
                       xaxis_title='Дата продажи',
                       # legend_title="Legend Title",
