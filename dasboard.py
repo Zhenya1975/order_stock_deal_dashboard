@@ -17,8 +17,8 @@ import plan_prep
 import functions_file
 import base64
 import io
-from sklearn.model_selection import train_test_split
-from sklearn import linear_model
+#from sklearn.model_selection import train_test_split
+#from sklearn import linear_model
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 app.title = "Demo dashboard"
@@ -29,6 +29,11 @@ makers_list = initial_values.makers_list
 product_groups = initial_values.product_groups
 product_groups_list = initial_values.product_groups_list
 deal_stages = initial_values.deal_stages
+
+df_deals = pd.read_csv('data/df_deals.csv')
+deals_df_1 = pd.read_csv('data/df_deals.csv', parse_dates=['date'])
+orders_delivery_df = pd.read_csv('data/orders_delivery_df.csv')
+dealer_stockin_stockout_df = pd.read_csv('data/dealer_stockin_stockout.csv')
 
 body = html.Div([
     dbc.Container(
@@ -61,7 +66,7 @@ body = html.Div([
 # передаем разметку страницы в приложение
 app.layout = html.Div([body])
 
-
+# обработчик выбора этапов сделки на графике Заказы-склады-сделки
 @app.callback(
     Output("deal_stage_selector_checklist", "value"),
     [Input('select_all_deals_stage_button', 'n_clicks'),
@@ -151,9 +156,6 @@ def button_callback_func(select_all_makers_button, release_all_makers_button, op
         return selected_values
     return full_list
 
-
-orders_delivery_df = pd.read_csv('data/orders_delivery_df.csv')
-dealer_stockin_stockout_df = pd.read_csv('data/dealer_stockin_stockout.csv')
 
 @app.callback([Output('orders_stock_deals', 'figure'),
                Output('card_orders_today_value', 'children'),
@@ -328,9 +330,6 @@ def orders_stock(selected_maker, selected_product_groups, selected_deal_stages):
         stock_qty_today), format(deals_qty_today)
 
 
-df_deals = pd.read_csv('data/df_deals.csv')
-
-
 # callback Воронка продаж
 @app.callback([Output('funnel_graph', 'figure'),
                Output('card_deals_tab_deals_today_value', 'children'),
@@ -343,69 +342,20 @@ df_deals = pd.read_csv('data/df_deals.csv')
                # Input('deal_stage_selector_checklist', 'value'),
                ])
 def deals_tab(selected_maker, selected_product_groups):
-    df_deals_filtered_by_inputs = df_deals.loc[
-        df_deals['product_group_code'].isin(selected_product_groups) &
-        df_deals['manufacturer'].isin(selected_maker) |
-        df_deals['deal_status'].isin(['empty'])
+
+    df_deals_filtered_by_inputs = deals_df_1.loc[
+        deals_df_1['product_group_code'].isin(selected_product_groups) &
+        deals_df_1['manufacturer'].isin(selected_maker) |
+        deals_df_1['deal_status'].isin(['empty'])
         ]
-
-    today = datetime.datetime.now()
-    today_str = today.strftime("%Y-%m-%d")
-    today_funnel_df = df_deals_filtered_by_inputs.loc[df_deals_filtered_by_inputs['date'] == today_str]
-    df_deals_groupped = today_funnel_df.groupby('deal_stage_name', as_index=False)["qty"].sum()
-
-    ##### Готовим списки X и Y для построения графика
-    # сначала готовим словарь с нулевыми значеними
-    deal_stages_zeros = {}
-    deal_stages_zeros['1. Выявление потребности'] = 0
-    deal_stages_zeros['2. Презентационная работа'] = 0
-    deal_stages_zeros['3. Переговоры'] = 0
-    deal_stages_zeros['4. Заключение договора'] = 0
-    deal_stages_zeros['5. Отгрузка и закрытие сделки'] = 0
-    # затем переписываем строки в словаре значеними. Нули должны остаться
-    for index, row in df_deals_groupped.iterrows():
-        deal_stage_name_in_selection = row['deal_stage_name']
-        deal_stage_qty_in_selection = row['qty']
-        deal_stages_zeros[deal_stage_name_in_selection] = deal_stage_qty_in_selection
-
-    y_graph = []
-    for key, val in deal_stages_zeros.items():
-        y_graph.append([key][0])
-    x_graph = []
-    for key, val in deal_stages_zeros.items():
-        x_graph.append([val][0])
+    x_graph, y_graph, deals_qty_today, won_qty_2021, lost_qty_2021 = functions_file.funnel_data(df_deals_filtered_by_inputs)
 
     # deals_qty_today - для карточки Количество товаров в сделках на сегодняшний день
-    deals_qty_today = df_deals_groupped.loc[:, 'qty'].sum()
-
-    # считаем сколько машин мы продали
-    deal_won = df_deals_filtered_by_inputs.loc[df_deals_filtered_by_inputs['milestone_event'] == 'deal_won']
-    # переводим поле "Дата" в формат времени
-    deal_won.loc[:, 'date'] = pd.to_datetime(deal_won['date'], infer_datetime_format=True)
-    # начало года - формат времени
-    start_date_deal_won = datetime.datetime.strptime("01.01.2021", "%d.%m.%Y")
-    end_date_deal_won = datetime.datetime.now()
-    after_start_date_won = deal_won.loc[:, "date"] >= start_date_deal_won
-    before_end_date_won = deal_won.loc[:, "date"] <= end_date_deal_won
-    between_two_dates = after_start_date_won & before_end_date_won
-    deal_won_groupped_2021 = deal_won.loc[between_two_dates]
-    won_qty_2021 = deal_won_groupped_2021.loc[:, 'qty'].sum()
-
-    # считаем сколько машин мы проиграли
-    deal_lost = df_deals_filtered_by_inputs.loc[df_deals_filtered_by_inputs['milestone_event'] == 'deal_lost']
-    # переводим поле "Дата" в формат времени
-    deal_lost.loc[:, 'date'] = pd.to_datetime(deal_lost['date'], infer_datetime_format=True)
-    # начало года - формат времени
-    start_date_deal_lost = datetime.datetime.strptime("01.01.2021", "%d.%m.%Y")
-    end_date_deal_lost = datetime.datetime.now()
-    after_start_date_lost = deal_lost.loc[:, "date"] >= start_date_deal_lost
-    before_end_date_lost = deal_lost.loc[:, "date"] <= end_date_deal_lost
-    between_two_dates = after_start_date_lost & before_end_date_lost
-    deal_lost_groupped_2021 = deal_lost.loc[between_two_dates]
-    lost_qty_2021 = deal_lost_groupped_2021.loc[:, 'qty'].sum()
+    deals_qty_today = deals_qty_today
+    won_qty_2021 = won_qty_2021
+    lost_qty_2021 = lost_qty_2021
 
     trace = go.Funnel(
-        # y=["Website visit", "Downloads", "Potential customers", "Requested price", "Finalized"],
         y=y_graph,
         x=x_graph,
         textposition="inside",

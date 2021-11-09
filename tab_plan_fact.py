@@ -121,8 +121,8 @@ def plan_fact_tab():
                                             'paddingTop': '10px', 'color': 'white'},
                                      children=[
                                          dbc.Row([ # card_tab_deals_qty_in_deals - это название карточки
-                                             dbc.Col(width = 4,
-                                                     children=[dbc.Card(card_tab_deals_qty_in_deals, color="dark", inverse=True)]),
+                                             dbc.Col(width = 4, children=[dbc.Card(card_tab_deals_qty_in_deals, color="dark", inverse=True)]),
+
                                              #dbc.Col(dbc.Card(card_tab_deals_won_deals, color="dark", inverse=True)),
                                              #dbc.Col(dbc.Card(card_tab_deals_lost_deals, color="dark", inverse=True)),
                                          ],
